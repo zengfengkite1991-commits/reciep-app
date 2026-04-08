@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>菜品研发记录</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:#333}
+        .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+        h1{color:#667eea;font-size:22px}
+        .btn{background:#667eea;color:#fff;border:none;padding:12px 24px;border-radius:25px;font-size:16px;cursor:pointer;margin:5px 0;width:100%}
+        .btn:active{transform:scale(0.95)}
+        .btn-small{width:auto;padding:6px 12px;font-size:12px}
+        .btn-secondary{background:#f0f0f0;color:#333}
+        .btn-danger{background:#ff6b6b}
+        .input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;margin-bottom:10px}
+        .input:focus{outline:none;border-color:#667eea}
+        .recipe{display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;cursor:pointer}
+        .hidden{display:none !important}
+        .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:15px;padding-bottom:5px}
+        .tab{background:#fff;border:2px solid #e0e0e0;padding:8px 16px;border-radius:20px;white-space:nowrap;cursor:pointer;font-size:14px}
+        .tab.active{background:#667eea;color:#fff;border-color:#667eea}
+        textarea{width:100%;min-height:80px;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:14px;margin-top:10px}
+        .step{background:#f8f8f8;border-radius:12px;padding:15px;margin-bottom:10px}
+        .step-num{display:inline-block;background:#667eea;color:#fff;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;font-weight:bold;margin-right:10px}
+        .ing-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:10px;align-items:center}
+        .flex{display:flex;gap:10px}
+        .flex .btn{flex:1}
+    </style>
+</head>
+<body>
+    <div id="page-main">
+        <div class="card">
+            <h1>🍳 菜品研发记录</h1>
+            <p style="color:#666;font-size:14px">记录每一道美味的诞生过程</p>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="filter('all')">全部</button>
+            <button class="tab" onclick="filter('饭类')">饭类</button>
+            <button class="tab" onclick="filter('粉类')">粉类</button>
+            <button class="tab" onclick="filter('小食')">小食</button>
+            <button class="tab" onclick="filter('主菜')">主菜</button>
+        </div>
+        <button class="btn" onclick="showEdit()">+ 创建新菜谱</button>
+        <div id="list" style="margin-top:15px"></div>
+    </div>
+
+    <div id="page-edit" class="hidden">
+        <div class="card">
+            <button class="btn btn-secondary" onclick="showMain()">← 返回</button>
+            <h2 id="edit-title" style="margin-top:15px;color:#667eea">创建新菜谱</h2>
+        </div>
+        <div class="card">
+            <input type="text" class="input" id="name" placeholder="菜谱名称">
+            <select class="input" id="category">
+                <option value="">选择分类</option>
+                <option value="饭类">饭类</option>
+                <option value="粉类">粉类</option>
+                <option value="小食">小食</option>
+                <option value="主菜">主菜</option>
+                <option value="冷食">冷食</option>
+            </select>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:10px">🥘 食材</h3>
+            <div id="ings"></div>
+            <button class="btn btn-secondary" onclick="addIng()">+ 添加食材</button>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:10px">📝 步骤</h3>
+            <div id="steps"></div>
+            <button class="btn btn-secondary" onclick="addStep()">+ 添加步骤</button>
+        </div>
+        <div class="flex">
+            <button class="btn" onclick="save()">保存</button>
+            <button class="btn btn-secondary" onclick="showMain()">取消</button>
+        </div>
+    </div>
+
+    <div id="page-detail" class="hidden">
+        <div class="card">
+            <button class="btn btn-secondary" onclick="showMain()">← 返回</button>
+            <h2 id="detail-name" style="margin-top:15px;color:#667eea"></h2>
+        </div>
+        <div id="detail-content"></div>
+        <div class="flex">
+            <button class="btn" onclick="doEdit()">编辑</button>
+            <button class="btn btn-danger" onclick="doDelete()">删除</button>
+        </div>
+    </div>
+
+    <script>
+        if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+        let recipes=JSON.parse(localStorage.getItem('recipes'))||[];
+        let current='all',editingId=null,viewingId=null;
+        
+        function showMain(){
+            document.getElementById('page-main').classList.remove('hidden');
+            document.getElementById('page-edit').classList.add('hidden');
+            document.getElementById('page-detail').classList.add('hidden');
+            render();
+        }
+        function showEdit(){
+            editingId=null;
+            document.getElementById('edit-title').textContent='创建新菜谱';
+            document.getElementById('name').value='';
+            document.getElementById('category').value='';
+            document.getElementById('ings').innerHTML=`<div class="ing-row"><input type="text" class="input" placeholder="食材名称"><input type="text" class="input" placeholder="份量"><input type="text" class="input" placeholder="单位"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`;
+            document.getElementById('steps').innerHTML=`<div class="step"><span class="step-num">1</span><textarea placeholder="描述步骤..."></textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`;
+            document.getElementById('page-main').classList.add('hidden');
+            document.getElementById('page-edit').classList.remove('hidden');
+        }
+        function addIng(){
+            document.getElementById('ings').insertAdjacentHTML('beforeend',`<div class="ing-row"><input type="text" class="input" placeholder="食材名称"><input type="text" class="input" placeholder="份量"><input type="text" class="input" placeholder="单位"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`);
+        }
+        function addStep(){
+            const n=document.querySelectorAll('.step').length+1;
+            document.getElementById('steps').insertAdjacentHTML('beforeend',`<div class="step"><span class="step-num">${n}</span><textarea placeholder="描述步骤..."></textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`);
+        }
+        function renum(){
+            document.querySelectorAll('.step-num').forEach((el,i)=>el.textContent=i+1);
+        }
+        function filter(cat){
+            current=cat;
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            event.target.classList.add('active');
+            render();
+        }
+        function render(){
+            const list=document.getElementById('list');
+            const data=current==='all'?recipes:recipes.filter(r=>r.category===current);
+            if(data.length===0){
+                list.innerHTML='<div class="card" style="text-align:center;color:#999;padding:40px">暂无菜谱，点击上方按钮创建</div>';
+                return;
+            }
+            list.innerHTML=data.map(r=>`<div class="recipe" onclick="showDetail('${r.id}')"><div><div style="font-weight:bold;font-size:18px;color:#333">${r.name}</div><div style="color:#999;font-size:14px;margin-top:5px">${r.category} · ${r.ings.length}种食材 · ${r.steps.length}个步骤</div></div><span style="font-size:20px;color:#667eea">→</span></div>`).join('');
+        }
+        function save(){
+            const name=document.getElementById('name').value.trim();
+            const cat=document.getElementById('category').value;
+            if(!name||!cat){alert('请填写名称和分类');return;}
+            const ings=[],steps=[];
+            document.querySelectorAll('#ings .ing-row').forEach(row=>{
+                const inp=row.querySelectorAll('input');
+                if(inp[0].value)ings.push({name:inp[0].value,amount:inp[1].value||'0',unit:inp[2].value||'份'});
+            });
+            document.querySelectorAll('#steps textarea').forEach(t=>{if(t.value)steps.push({text:t.value})});
+            const recipe={id:editingId||Date.now().toString(),name,category:cat,ings,steps,date:new Date().toLocaleDateString()};
+            if(editingId){const i=recipes.findIndex(r=>r.id===editingId);recipes[i]=recipe}else{recipes.push(recipe)}
+            localStorage.setItem('recipes',JSON.stringify(recipes));
+            showMain();
+        }
+        function showDetail(id){
+            viewingId=id;
+            const r=recipes.find(x=>x.id===id);
+            document.getElementById('detail-name').textContent=r.name;
+            document.getElementById('detail-content').innerHTML=`<div class="card"><span style="background:#667eea;color:#fff;padding:5px 15px;border-radius:15px;font-size:14px">${r.category}</span><span style="color:#999;font-size:14px;margin-left:10px">${r.date}</span></div><div class="card"><h3 style="margin-bottom:15px">🥘 食材</h3>${r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('')}</div><div class="card"><h3 style="margin-bottom:15px">📝 步骤</h3>${r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span><p style="margin-top:10px;line-height:1.6">${s.text}</p></div>`).join('')}</div>`;
+            document.getElementById('page-main').classList.add('hidden');
+            document.getElementById('page-detail').classList.remove('hidden');
+        }
+        function doEdit(){
+            const r=recipes.find(x=>x.id===viewingId);
+            editingId=r.id;
+            document.getElementById('edit-title').textContent='编辑菜谱';
+            document.getElementById('name').value=r.name;
+            document.getElementById('category').value=r.category;
+            document.getElementById('ings').innerHTML=r.ings.map(i=>`<div class="ing-row"><input type="text" class="input" value="${i.name}"><input type="text" class="input" value="${i.amount}"><input type="text" class="input" value="${i.unit}"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`).join('');
+            document.getElementById('steps').innerHTML=r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span><textarea placeholder="描述步骤...">${s.text}</textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`).join('');
+            document.getElementById('page-detail').classList.add('hidden');
+            document.getElementById('page-edit').classList.remove('hidden');
+        }
+        function doDelete(){
+            if(!confirm('确定删除？'))return;
+            recipes=recipes.filter(r=>r.id!==viewingId);
+            localStorage.setItem('recipes',JSON.stringify(recipes));
+            showMain();
+        }
+        render();
+    </script>
+</body>
+</html>
+

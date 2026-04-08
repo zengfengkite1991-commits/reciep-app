@@ -1,0 +1,12 @@
+{
+  "name": "菜品研发记录",
+  "short_name": "菜品研发",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "icons": [
+    {"src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/1f373.png", "sizes": "72x72"},
+    {"src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/192x192/1f373.png", "sizes": "192x192"}
+  ]
+}
