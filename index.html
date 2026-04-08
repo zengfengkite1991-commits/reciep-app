@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -30,6 +31,13 @@
         .ing-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:10px;align-items:center}
         .flex{display:flex;gap:10px}
         .flex .btn{flex:1}
+        /* 图片相关样式 */
+        .step-img{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin:10px 0;display:none}
+        .step-img.has-image{display:block}
+        .file-input{display:none}
+        .upload-btn{background:#f0f0f0;color:#667eea;border:2px dashed #ccc;padding:20px;border-radius:10px;text-align:center;cursor:pointer;margin:10px 0}
+        .upload-btn:active{background:#e0e0e0}
+        .detail-img{width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-bottom:10px}
     </style>
 </head>
 <body>
@@ -71,7 +79,7 @@
             <button class="btn btn-secondary" onclick="addIng()">+ 添加食材</button>
         </div>
         <div class="card">
-            <h3 style="margin-bottom:10px">📝 步骤</h3>
+            <h3 style="margin-bottom:10px">📝 步骤（可配图）</h3>
             <div id="steps"></div>
             <button class="btn btn-secondary" onclick="addStep()">+ 添加步骤</button>
         </div>
@@ -97,39 +105,76 @@
         if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
         let recipes=JSON.parse(localStorage.getItem('recipes'))||[];
         let current='all',editingId=null,viewingId=null;
-        
+
         function showMain(){
             document.getElementById('page-main').classList.remove('hidden');
             document.getElementById('page-edit').classList.add('hidden');
             document.getElementById('page-detail').classList.add('hidden');
             render();
         }
+        
         function showEdit(){
             editingId=null;
             document.getElementById('edit-title').textContent='创建新菜谱';
             document.getElementById('name').value='';
             document.getElementById('category').value='';
             document.getElementById('ings').innerHTML=`<div class="ing-row"><input type="text" class="input" placeholder="食材名称"><input type="text" class="input" placeholder="份量"><input type="text" class="input" placeholder="单位"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`;
-            document.getElementById('steps').innerHTML=`<div class="step"><span class="step-num">1</span><textarea placeholder="描述步骤..."></textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`;
+            document.getElementById('steps').innerHTML=createStepHtml(1);
             document.getElementById('page-main').classList.add('hidden');
             document.getElementById('page-edit').classList.remove('hidden');
         }
+
+        function createStepHtml(n, imgData='', text=''){
+            return `
+                <div class="step" data-step="${n}">
+                    <span class="step-num">${n}</span>
+                    <div class="upload-btn" onclick="this.nextElementSibling.click()">
+                        📷 点击选择图片（可选）
+                    </div>
+                    <input type="file" class="file-input" accept="image/*" onchange="handleImage(this)">
+                    <img class="step-img ${imgData?'has-image':''}" src="${imgData}" ${imgData?'':'style="display:none"'} onclick="this.previousElementSibling.previousElementSibling.click()">
+                    <textarea placeholder="描述步骤...">${text}</textarea>
+                    <button class="btn btn-danger btn-small" onclick="this.parentElement.remove();renum()">删除</button>
+                </div>
+            `;
+        }
+
+        function handleImage(input){
+            const file=input.files[0];
+            if(!file)return;
+            
+            const reader=new FileReader();
+            reader.onload=function(e){
+                const img=input.nextElementSibling;
+                img.src=e.target.result;
+                img.classList.add('has-image');
+                img.style.display='block';
+            };
+            reader.readAsDataURL(file);
+        }
+
         function addIng(){
             document.getElementById('ings').insertAdjacentHTML('beforeend',`<div class="ing-row"><input type="text" class="input" placeholder="食材名称"><input type="text" class="input" placeholder="份量"><input type="text" class="input" placeholder="单位"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`);
         }
+        
         function addStep(){
             const n=document.querySelectorAll('.step').length+1;
-            document.getElementById('steps').insertAdjacentHTML('beforeend',`<div class="step"><span class="step-num">${n}</span><textarea placeholder="描述步骤..."></textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`);
+            document.getElementById('steps').insertAdjacentHTML('beforeend',createStepHtml(n));
         }
+        
         function renum(){
-            document.querySelectorAll('.step-num').forEach((el,i)=>el.textContent=i+1);
+            document.querySelectorAll('.step').forEach((step,i)=>{
+                step.querySelector('.step-num').textContent=i+1;
+            });
         }
+        
         function filter(cat){
             current=cat;
             document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
             event.target.classList.add('active');
             render();
         }
+        
         function render(){
             const list=document.getElementById('list');
             const data=current==='all'?recipes:recipes.filter(r=>r.category===current);
@@ -139,48 +184,123 @@
             }
             list.innerHTML=data.map(r=>`<div class="recipe" onclick="showDetail('${r.id}')"><div><div style="font-weight:bold;font-size:18px;color:#333">${r.name}</div><div style="color:#999;font-size:14px;margin-top:5px">${r.category} · ${r.ings.length}种食材 · ${r.steps.length}个步骤</div></div><span style="font-size:20px;color:#667eea">→</span></div>`).join('');
         }
+        
         function save(){
             const name=document.getElementById('name').value.trim();
             const cat=document.getElementById('category').value;
             if(!name||!cat){alert('请填写名称和分类');return;}
-            const ings=[],steps=[];
+            
+            const ings=[];
             document.querySelectorAll('#ings .ing-row').forEach(row=>{
                 const inp=row.querySelectorAll('input');
                 if(inp[0].value)ings.push({name:inp[0].value,amount:inp[1].value||'0',unit:inp[2].value||'份'});
             });
-            document.querySelectorAll('#steps textarea').forEach(t=>{if(t.value)steps.push({text:t.value})});
-            const recipe={id:editingId||Date.now().toString(),name,category:cat,ings,steps,date:new Date().toLocaleDateString()};
-            if(editingId){const i=recipes.findIndex(r=>r.id===editingId);recipes[i]=recipe}else{recipes.push(recipe)}
+            
+            const steps=[];
+            document.querySelectorAll('#steps .step').forEach(step=>{
+                const text=step.querySelector('textarea').value;
+                const img=step.querySelector('.step-img').src;
+                // 只保存有内容的步骤
+                if(text||img.includes('data:image')){
+                    steps.push({
+                        text:text,
+                        image:img.includes('data:image')?img:''
+                    });
+                }
+            });
+            
+            const recipe={
+                id:editingId||Date.now().toString(),
+                name,
+                category:cat,
+                ings,
+                steps,
+                date:new Date().toLocaleDateString()
+            };
+            
+            if(editingId){
+                const i=recipes.findIndex(r=>r.id===editingId);
+                recipes[i]=recipe;
+            }else{
+                recipes.push(recipe);
+            }
+            
             localStorage.setItem('recipes',JSON.stringify(recipes));
             showMain();
         }
+        
         function showDetail(id){
             viewingId=id;
             const r=recipes.find(x=>x.id===id);
             document.getElementById('detail-name').textContent=r.name;
-            document.getElementById('detail-content').innerHTML=`<div class="card"><span style="background:#667eea;color:#fff;padding:5px 15px;border-radius:15px;font-size:14px">${r.category}</span><span style="color:#999;font-size:14px;margin-left:10px">${r.date}</span></div><div class="card"><h3 style="margin-bottom:15px">🥘 食材</h3>${r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('')}</div><div class="card"><h3 style="margin-bottom:15px">📝 步骤</h3>${r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span><p style="margin-top:10px;line-height:1.6">${s.text}</p></div>`).join('')}</div>`;
+            
+            let stepsHtml='';
+            if(r.steps&&r.steps.length>0){
+                stepsHtml=r.steps.map((s,i)=>`
+                    <div class="step">
+                        <span class="step-num">${i+1}</span>
+                        ${s.image?`<img class="detail-img" src="${s.image}">`:''}
+                        <p style="line-height:1.6">${s.text||'（无文字说明）'}</p>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('detail-content').innerHTML=`
+                <div class="card">
+                    <span style="background:#667eea;color:#fff;padding:5px 15px;border-radius:15px;font-size:14px">${r.category}</span>
+                    <span style="color:#999;font-size:14px;margin-left:10px">${r.date}</span>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:15px">🥘 食材</h3>
+                    ${r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('')}
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:15px">📝 步骤</h3>
+                    ${stepsHtml||'<p style="color:#999">暂无步骤</p>'}
+                </div>
+            `;
             document.getElementById('page-main').classList.add('hidden');
             document.getElementById('page-detail').classList.remove('hidden');
         }
+        
         function doEdit(){
             const r=recipes.find(x=>x.id===viewingId);
             editingId=r.id;
             document.getElementById('edit-title').textContent='编辑菜谱';
             document.getElementById('name').value=r.name;
             document.getElementById('category').value=r.category;
-            document.getElementById('ings').innerHTML=r.ings.map(i=>`<div class="ing-row"><input type="text" class="input" value="${i.name}"><input type="text" class="input" value="${i.amount}"><input type="text" class="input" value="${i.unit}"><button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button></div>`).join('');
-            document.getElementById('steps').innerHTML=r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span><textarea placeholder="描述步骤...">${s.text}</textarea><button class="btn btn-danger btn-small" style="margin-top:10px" onclick="this.parentElement.remove();renum()">删除</button></div>`).join('');
+            
+            document.getElementById('ings').innerHTML=r.ings.map(i=>`
+                <div class="ing-row">
+                    <input type="text" class="input" value="${i.name}">
+                    <input type="text" class="input" value="${i.amount}">
+                    <input type="text" class="input" value="${i.unit}">
+                    <button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button>
+                </div>
+            `).join('');
+            
+            // 重建步骤，包括图片
+            document.getElementById('steps').innerHTML='';
+            if(r.steps&&r.steps.length>0){
+                r.steps.forEach((s,i)=>{
+                    document.getElementById('steps').insertAdjacentHTML('beforeend',createStepHtml(i+1,s.image||'',s.text||''));
+                });
+            }else{
+                document.getElementById('steps').innerHTML=createStepHtml(1);
+            }
+            
             document.getElementById('page-detail').classList.add('hidden');
             document.getElementById('page-edit').classList.remove('hidden');
         }
+        
         function doDelete(){
             if(!confirm('确定删除？'))return;
             recipes=recipes.filter(r=>r.id!==viewingId);
             localStorage.setItem('recipes',JSON.stringify(recipes));
             showMain();
         }
+        
         render();
     </script>
 </body>
 </html>
-
