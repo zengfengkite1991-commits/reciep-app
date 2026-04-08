@@ -8,6 +8,9 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- html2canvas 和 jsPDF 库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:#333}
@@ -19,6 +22,8 @@
         .btn-small{width:auto;padding:6px 12px;font-size:12px}
         .btn-secondary{background:#f0f0f0;color:#333}
         .btn-danger{background:#ff6b6b}
+        .btn-success{background:#52c41a}
+        .btn-warning{background:#faad14}
         .input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;margin-bottom:0}
         .input:focus{outline:none;border-color:#667eea}
         select.input{background:#fff}
@@ -41,6 +46,21 @@
         .detail-img{width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-bottom:10px}
         .section-title{color:#667eea;font-size:16px;font-weight:bold;margin:15px 0 10px;padding-bottom:5px;border-bottom:2px solid #f0f0f0}
         .section-title:first-child{margin-top:0}
+        /* 分享弹窗 */
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+        .modal.active{display:flex}
+        .modal-content{background:#fff;border-radius:20px;padding:30px;width:100%;max-width:400px;text-align:center}
+        .modal-title{font-size:20px;margin-bottom:20px;color:#333}
+        .share-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px}
+        .share-item{padding:20px;border:2px solid #e0e0e0;border-radius:12px;cursor:pointer;transition:all 0.3s}
+        .share-item:hover{border-color:#667eea;background:#f8f8ff}
+        .share-icon{font-size:32px;margin-bottom:8px}
+        .share-text{font-size:14px;color:#666}
+        .close-btn{width:100%;padding:12px;background:#f0f0f0;border:none;border-radius:10px;font-size:16px;cursor:pointer}
+        /* 分享预览 */
+        .share-preview{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;max-height:300px;overflow-y:auto}
+        /* 加载提示 */
+        .loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:20px 40px;border-radius:10px;display:none;z-index:2000}
     </style>
 </head>
 <body>
@@ -106,16 +126,43 @@
         <div id="detail-content"></div>
         <div class="flex">
             <button class="btn" onclick="doEdit()">编辑</button>
+            <button class="btn btn-success" onclick="showShare()">分享</button>
             <button class="btn btn-danger" onclick="doDelete()">删除</button>
         </div>
     </div>
+
+    <!-- 分享弹窗 -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">分享菜谱</h3>
+            <div class="share-grid">
+                <div class="share-item" onclick="shareLink()">
+                    <div class="share-icon">🔗</div>
+                    <div class="share-text">复制链接</div>
+                </div>
+                <div class="share-item" onclick="saveImage()">
+                    <div class="share-icon">🖼️</div>
+                    <div class="share-text">保存图片</div>
+                </div>
+                <div class="share-item" onclick="savePDF()">
+                    <div class="share-icon">📄</div>
+                    <div class="share-text">保存PDF</div>
+                </div>
+            </div>
+            <div id="sharePreview" class="share-preview hidden"></div>
+            <button class="close-btn" onclick="closeShare()">取消</button>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading">生成中...</div>
 
     <script>
         if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
         let recipes=JSON.parse(localStorage.getItem('recipes'))||[];
         let current='all',editingId=null,viewingId=null;
 
-        // 单位下拉选项（调料和食材共用）
+        // 单位下拉选项
         const unitOptions=`
             <option value="">单位</option>
             <option value="支">支</option>
@@ -144,6 +191,7 @@
             document.getElementById('page-main').classList.remove('hidden');
             document.getElementById('page-edit').classList.add('hidden');
             document.getElementById('page-detail').classList.add('hidden');
+            closeShare();
             render();
         }
         
@@ -254,7 +302,6 @@
             const cat=document.getElementById('category').value;
             if(!name||!cat){alert('请填写名称和分类');return;}
             
-            // 收集调料
             const seasonings=[];
             document.querySelectorAll('#seasonings .seasoning-row').forEach(row=>{
                 const inputs=row.querySelectorAll('input,select');
@@ -265,7 +312,6 @@
                 });
             });
             
-            // 收集食材
             const ings=[];
             document.querySelectorAll('#ings .ing-row').forEach(row=>{
                 const inputs=row.querySelectorAll('input,select');
@@ -276,7 +322,6 @@
                 });
             });
             
-            // 收集步骤
             const steps=[];
             document.querySelectorAll('#steps .step').forEach(step=>{
                 const text=step.querySelector('textarea').value;
@@ -315,19 +360,16 @@
             const r=recipes.find(x=>x.id===id);
             document.getElementById('detail-name').textContent=r.name;
             
-            // 调料HTML
             let seasoningsHtml='';
             if(r.seasonings&&r.seasonings.length>0){
                 seasoningsHtml=`<div class="card"><h3 style="margin-bottom:15px">🧂 调料</h3>${r.seasonings.map(s=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${s.name}</span><span style="color:#667eea;font-weight:bold">${s.amount}${s.unit}</span></div>`).join('')}</div>`;
             }
             
-            // 食材HTML
             let ingsHtml='';
             if(r.ings&&r.ings.length>0){
                 ingsHtml=`<div class="card"><h3 style="margin-bottom:15px">🥘 食材</h3>${r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('')}</div>`;
             }
             
-            // 步骤HTML
             let stepsHtml='';
             if(r.steps&&r.steps.length>0){
                 stepsHtml=`<div class="card"><h3 style="margin-bottom:15px">📝 步骤</h3>${r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span>${s.image?`<img class="detail-img" src="${s.image}">`:''}<p style="line-height:1.6">${s.text||'（无文字说明）'}</p></div>`).join('')}</div>`;
@@ -353,7 +395,6 @@
             document.getElementById('name').value=r.name;
             document.getElementById('category').value=r.category;
             
-            // 重建调料
             document.getElementById('seasonings').innerHTML='';
             if(r.seasonings&&r.seasonings.length>0){
                 r.seasonings.forEach(s=>{
@@ -363,7 +404,6 @@
                 document.getElementById('seasonings').innerHTML=seasoningRow();
             }
             
-            // 重建食材
             document.getElementById('ings').innerHTML='';
             if(r.ings&&r.ings.length>0){
                 r.ings.forEach(i=>{
@@ -373,7 +413,6 @@
                 document.getElementById('ings').innerHTML=ingRow();
             }
             
-            // 重建步骤
             document.getElementById('steps').innerHTML='';
             if(r.steps&&r.steps.length>0){
                 r.steps.forEach((s,i)=>{
@@ -393,6 +432,151 @@
             localStorage.setItem('recipes',JSON.stringify(recipes));
             showMain();
         }
+
+        // ========== 分享功能 ==========
+        
+        function showShare(){
+            document.getElementById('shareModal').classList.add('active');
+        }
+        
+        function closeShare(){
+            document.getElementById('shareModal').classList.remove('active');
+            document.getElementById('sharePreview').classList.add('hidden');
+        }
+        
+        // 复制链接
+        function shareLink(){
+            const r=recipes.find(x=>x.id===viewingId);
+            const url=window.location.href+'?recipe='+r.id;
+            
+            if(navigator.clipboard){
+                navigator.clipboard.writeText(url).then(()=>{
+                    alert('链接已复制到剪贴板！');
+                    closeShare();
+                });
+            }else{
+                alert('请手动复制：'+url);
+            }
+        }
+        
+        // 保存图片
+        async function saveImage(){
+            showLoading(true);
+            try{
+                const r=recipes.find(x=>x.id===viewingId);
+                const content=createShareContent(r);
+                
+                const canvas=await html2canvas(content,{
+                    scale:2,
+                    backgroundColor:'#ffffff',
+                    useCORS:true
+                });
+                
+                const link=document.createElement('a');
+                link.download=`${r.name}_菜谱.png`;
+                link.href=canvas.toDataURL();
+                link.click();
+                
+                closeShare();
+            }catch(err){
+                alert('生成图片失败：'+err.message);
+            }
+            showLoading(false);
+        }
+        
+        // 保存PDF
+        async function savePDF(){
+            showLoading(true);
+            try{
+                const r=recipes.find(x=>x.id===viewingId);
+                const content=createShareContent(r);
+                
+                const canvas=await html2canvas(content,{
+                    scale:2,
+                    backgroundColor:'#ffffff',
+                    useCORS:true
+                });
+                
+                const imgData=canvas.toDataURL('image/png');
+                const {jsPDF}=window.jspdf;
+                const pdf=new jsPDF('p','mm','a4');
+                
+                const imgWidth=210;
+                const pageHeight=295;
+                const imgHeight=canvas.height*imgWidth/canvas.width;
+                let heightLeft=imgHeight;
+                let position=0;
+                
+                pdf.addImage(imgData,'PNG',0,position,imgWidth,imgHeight);
+                heightLeft-=pageHeight;
+                
+                while(heightLeft>=0){
+                    position=heightLeft-imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData,'PNG',0,position,imgWidth,imgHeight);
+                    heightLeft-=pageHeight;
+                }
+                
+                pdf.save(`${r.name}_菜谱.pdf`);
+                closeShare();
+            }catch(err){
+                alert('生成PDF失败：'+err.message);
+            }
+            showLoading(false);
+        }
+        
+        // 创建分享内容
+        function createShareContent(r){
+            const div=document.createElement('div');
+            div.style.cssText='width:375px;padding:20px;background:#fff;font-family:sans-serif;';
+            
+            let seasoningsHtml='';
+            if(r.seasonings&&r.seasonings.length>0){
+                seasoningsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">🧂 调料</h3>`+r.seasonings.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${s.name}</span><span style="color:#667eea;font-weight:bold">${s.amount}${s.unit}</span></div>`).join('');
+            }
+            
+            let ingsHtml='';
+            if(r.ings&&r.ings.length>0){
+                ingsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">🥘 食材</h3>`+r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('');
+            }
+            
+            let stepsHtml='';
+            if(r.steps&&r.steps.length>0){
+                stepsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">📝 步骤</h3>`+r.steps.map((s,i)=>`<div style="margin-bottom:15px;"><div style="background:#667eea;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-weight:bold;display:inline-block;margin-right:8px;">${i+1}</div><div style="margin-top:8px;">${s.image?`<img src="${s.image}" style="max-width:100%;border-radius:8px;margin-bottom:8px;">`:''}<p style="line-height:1.6;margin:0;">${s.text||''}</p></div></div>`).join('');
+            }
+            
+            div.innerHTML=`
+                <div style="text-align:center;border-bottom:3px solid #667eea;padding-bottom:15px;margin-bottom:20px;">
+                    <h1 style="color:#667eea;margin:0;font-size:24px;">🍳 ${r.name}</h1>
+                    <p style="color:#999;margin:5px 0 0;font-size:14px;">${r.category} · ${r.date}</p>
+                </div>
+                ${seasoningsHtml}
+                ${ingsHtml}
+                ${stepsHtml}
+                <div style="text-align:center;margin-top:30px;padding-top:15px;border-top:1px solid #eee;color:#999;font-size:12px;">
+                    由 菜品研发记录 生成
+                </div>
+            `;
+            
+            document.body.appendChild(div);
+            return div;
+        }
+        
+        function showLoading(show){
+            document.getElementById('loading').style.display=show?'block':'none';
+        }
+
+        // 检查URL参数，打开分享的菜谱
+        window.onload=function(){
+            const urlParams=new URLSearchParams(window.location.search);
+            const recipeId=urlParams.get('recipe');
+            if(recipeId){
+                const recipe=recipes.find(r=>r.id===recipeId);
+                if(recipe){
+                    showDetail(recipeId);
+                }
+            }
+        };
         
         render();
     </script>
