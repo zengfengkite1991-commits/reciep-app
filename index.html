@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;padding-bottom:80px;color:#333;line-height:1.6}
@@ -32,6 +34,10 @@
         .btn-warning:hover{background:#ffc107;box-shadow:0 4px 12px rgba(250,173,20,0.4)}
         .btn-info{background:#1890ff}
         .btn-info:hover{background:#2196f3;box-shadow:0 4px 12px rgba(24,144,255,0.4)}
+        .btn-dark{background:#4a5568}
+        .btn-dark:hover{background:#2d3748;box-shadow:0 4px 12px rgba(74,85,104,0.4)}
+        .btn-purple{background:#9f7aea}
+        .btn-purple:hover{background:#805ad5;box-shadow:0 4px 12px rgba(159,122,234,0.4)}
         .input{width:100%;padding:14px;border:2px solid #e8e8e8;border-radius:12px;font-size:16px;margin-bottom:12px;transition:all 0.3s;background:#fafafa}
         .input:focus{outline:none;border-color:#667eea;background:#fff;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
         select.input{background:#fff;cursor:pointer}
@@ -72,7 +78,7 @@
         .modal.active{display:flex;animation:fadeIn 0.2s ease}
         .modal-content{background:#fff;border-radius:24px;padding:28px;width:100%;max-width:420px;text-align:center;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
         .modal-title{font-size:22px;margin-bottom:24px;color:#333;font-weight:600}
-        .share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .share-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
         .share-item{padding:20px 12px;border:2px solid #e8e8e8;border-radius:16px;cursor:pointer;transition:all 0.3s;background:#fafafa}
         .share-item:hover{border-color:#667eea;background:#f0f4ff;transform:translateY(-3px);box-shadow:0 8px 20px rgba(102,126,234,0.2)}
         .share-item:active{transform:scale(0.95)}
@@ -135,6 +141,36 @@
         .main-image-change-btn{position:absolute;bottom:15px;right:15px;background:rgba(102,126,234,0.9);color:#fff;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;backdrop-filter:blur(10px);transition:all 0.3s}
         .main-image-change-btn:hover{background:#667eea;transform:scale(1.05)}
         
+        /* 回收站样式 */
+        .trash-item{display:flex;align-items:center;padding:16px;background:#fff;border-radius:12px;margin-bottom:12px;border:2px solid #fee2e2;transition:all 0.3s}
+        .trash-item:hover{border-color:#fecaca;transform:translateX(5px)}
+        .trash-thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;margin-right:12px;background:#f0f0f0;flex-shrink:0}
+        .trash-thumb-placeholder{width:50px;height:50px;border-radius:8px;margin-right:12px;background:linear-gradient(135deg,#cbd5e0 0%,#a0aec0 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;flex-shrink:0}
+        .trash-info{flex:1;min-width:0}
+        .trash-title{font-weight:600;color:#333;font-size:15px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .trash-meta{color:#999;font-size:12px}
+        .trash-meta .days-left{color:#e53e3e;font-weight:500}
+        .trash-actions{display:flex;gap:8px}
+        .trash-actions .btn{width:auto;padding:8px 16px;font-size:13px;margin:0}
+        .trash-empty{text-align:center;padding:40px;color:#999}
+        .trash-warning{background:#fff5f5;border:2px solid #fed7d7;border-radius:12px;padding:16px;margin-bottom:20px;color:#c53030;font-size:14px}
+        .trash-warning strong{color:#9b2c2c}
+        
+        /* 导入导出样式 */
+        .import-export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+        .import-export-item{padding:24px 16px;border:2px solid #e8e8e8;border-radius:16px;cursor:pointer;transition:all 0.3s;background:#fafafa;text-align:center}
+        .import-export-item:hover{border-color:#667eea;background:#f0f4ff;transform:translateY(-3px);box-shadow:0 8px 20px rgba(102,126,234,0.2)}
+        .import-export-item.import:hover{border-color:#52c41a;background:#f6ffed}
+        .import-export-item.export:hover{border-color:#1890ff;background:#e6f7ff}
+        .import-export-icon{font-size:40px;margin-bottom:12px;display:block}
+        .import-export-title{font-size:16px;font-weight:600;color:#333;margin-bottom:6px}
+        .import-export-desc{font-size:12px;color:#888}
+        .file-drop-zone{border:3px dashed #667eea;border-radius:16px;padding:40px 20px;text-align:center;background:#f0f4ff;transition:all 0.3s;margin:20px 0}
+        .file-drop-zone.dragover{background:#e8eeff;border-style:solid;transform:scale(1.02)}
+        .file-drop-zone .icon{font-size:48px;margin-bottom:12px;color:#667eea}
+        .file-drop-zone .text{color:#667eea;font-size:14px;font-weight:500}
+        .file-drop-zone .hint{color:#888;font-size:12px;margin-top:8px}
+        
         @media(max-width:480px){
             .ing-row,.seasoning-row{grid-template-columns:1fr 1fr;gap:8px}
             .ing-row input:first-child,.seasoning-row input:first-child{grid-column:1/-1}
@@ -142,7 +178,9 @@
             .share-item{display:flex;align-items:center;padding:16px;text-align:left;gap:16px}
             .share-icon{margin-bottom:0;font-size:28px}
             .flex .btn{min-width:calc(50% - 6px)}
-            .recipe-thumb,.recipe-thumb-placeholder{width:50px;height:50px}
+            .recipe-thumb,.recipe-thumb-placeholder,.trash-thumb,.trash-thumb-placeholder{width:50px;height:50px}
+            .trash-actions .btn{padding:6px 12px;font-size:12px}
+            .import-export-grid{grid-template-columns:1fr}
         }
     </style>
 </head>
@@ -167,8 +205,8 @@
                     <div class="stat-label">文件夹</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-num" id="statCategories">0</div>
-                    <div class="stat-label">分类</div>
+                    <div class="stat-num" id="statTrash">0</div>
+                    <div class="stat-label">回收站</div>
                 </div>
             </div>
         </div>
@@ -181,6 +219,8 @@
             <button class="btn btn-secondary" onclick="showNewFolder()">📁 新建文件夹</button>
             <button class="btn" onclick="showEdit()">📝 新建菜谱</button>
             <button class="btn btn-info" onclick="toggleSortMode()" id="sortBtn">🔀 排序模式</button>
+            <button class="btn btn-dark" onclick="showTrash()">🗑️ 回收站</button>
+            <button class="btn btn-purple" onclick="showImportExport()">📥📤 导入导出</button>
         </div>
         
         <div id="folderList"></div>
@@ -201,7 +241,6 @@
         </div>
         
         <div class="card">
-            <!-- 主图上传区域 -->
             <div class="main-image-container">
                 <div class="main-image-preview-wrapper">
                     <img id="mainImagePreview" class="main-image-preview" onclick="viewMainImage()">
@@ -254,6 +293,62 @@
             <button class="btn btn-success" onclick="showShare()">📤 分享</button>
             <button class="btn btn-warning" onclick="showMove()">📂 移动</button>
             <button class="btn btn-danger" onclick="doDelete()">🗑️ 删除</button>
+        </div>
+    </div>
+
+    <!-- 回收站页面 -->
+    <div id="page-trash" class="hidden">
+        <div class="card">
+            <button class="btn btn-secondary" onclick="backToMain()">← 返回列表</button>
+            <h2 style="margin-top:15px;color:#e53e3e">🗑️ 回收站</h2>
+        </div>
+        
+        <div class="trash-warning">
+            <strong>⚠️ 注意：</strong>回收站中的菜谱将在 <strong>30天后自动永久删除</strong>。请及时恢复需要的菜谱。
+        </div>
+        
+        <div class="action-bar">
+            <button class="btn btn-danger" onclick="emptyTrash()">🗑️ 清空回收站</button>
+        </div>
+        
+        <div id="trashList"></div>
+        
+        <div class="trash-empty hidden" id="trashEmpty">
+            <span class="empty-state-icon">🗑️</span>
+            <div class="empty-state-text">回收站是空的</div>
+            <div class="empty-state-hint">删除的菜谱会在这里保留30天</div>
+        </div>
+    </div>
+
+    <!-- 导入导出页面 -->
+    <div id="page-import-export" class="hidden">
+        <div class="card">
+            <button class="btn btn-secondary" onclick="backToMain()">← 返回列表</button>
+            <h2 style="margin-top:15px;color:#667eea">📥📤 数据导入导出</h2>
+        </div>
+        
+        <div class="card">
+            <div class="import-export-grid">
+                <div class="import-export-item import" onclick="showImportModal()">
+                    <span class="import-export-icon">📥</span>
+                    <div class="import-export-title">导入数据</div>
+                    <div class="import-export-desc">从JSON文件批量导入菜谱</div>
+                </div>
+                <div class="import-export-item export" onclick="showExportModal()">
+                    <span class="import-export-icon">📤</span>
+                    <div class="import-export-title">导出数据</div>
+                    <div class="import-export-desc">备份所有菜谱到JSON/Excel</div>
+                </div>
+            </div>
+            
+            <div style="background:#f0f4ff;padding:16px;border-radius:12px;margin-top:20px;border:2px solid #dde5ff">
+                <div style="color:#667eea;font-size:14px;font-weight:600;margin-bottom:8px">💡 使用说明</div>
+                <div style="color:#666;font-size:13px;line-height:1.6">
+                    • <strong>导入：</strong>支持导入之前导出的JSON文件，会自动合并现有数据<br>
+                    • <strong>导出：</strong>可选择导出JSON格式（完整数据）或Excel格式（表格查看）<br>
+                    • <strong>注意：</strong>导入前建议先导出备份，防止数据丢失
+                </div>
+            </div>
         </div>
     </div>
 
@@ -315,8 +410,48 @@
                     <span class="share-icon">📄</span>
                     <span class="share-text">保存PDF</span>
                 </div>
+                <div class="share-item" onclick="downloadExcel()">
+                    <span class="share-icon">📊</span>
+                    <span class="share-text">下载Excel</span>
+                </div>
             </div>
             <button class="close-btn" onclick="closeShare()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 导入弹窗 -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📥 导入数据</h3>
+            <div class="file-drop-zone" id="fileDropZone">
+                <div class="icon">📁</div>
+                <div class="text">点击选择或拖拽JSON文件到此处</div>
+                <div class="hint">支持 .json 格式文件</div>
+            </div>
+            <input type="file" id="importFileInput" class="file-input" accept=".json,application/json" onchange="handleImportFile(this)">
+            <div class="flex">
+                <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出弹窗 -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📤 导出数据</h3>
+            <div class="import-export-grid">
+                <div class="import-export-item export" onclick="exportJSON()">
+                    <span class="import-export-icon">📋</span>
+                    <div class="import-export-title">导出 JSON</div>
+                    <div class="import-export-desc">完整数据备份</div>
+                </div>
+                <div class="import-export-item export" onclick="exportExcel()">
+                    <span class="import-export-icon">📊</span>
+                    <div class="import-export-title">导出 Excel</div>
+                    <div class="import-export-desc">表格格式查看</div>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeExportModal()">关闭</button>
         </div>
     </div>
 
@@ -361,7 +496,46 @@
     <div id="loading" class="loading">处理中...</div>
 
     <script>
-        // Service Worker 注册
+        // ==================== 数据版本管理 ====================
+        const DATA_VERSION = '2.1';
+        const STORAGE_KEYS = {
+            VERSION: 'appDataVersion',
+            CONFIG: 'appConfig',
+            FOLDERS: 'recipeFolders',
+            RECIPES: 'recipes',
+            TRASH: 'recipeTrash',
+            TRASH_LAST_CLEAN: 'trashLastClean'
+        };
+        
+        function checkDataMigration() {
+            const currentVersion = localStorage.getItem(STORAGE_KEYS.VERSION);
+            
+            if (!currentVersion) {
+                console.log('进行数据迁移...');
+                const oldRecipes = localStorage.getItem('recipes');
+                
+                if (oldRecipes) {
+                    try {
+                        const recipes = JSON.parse(oldRecipes);
+                        recipes.forEach(r => {
+                            if (!r.createdAt) r.createdAt = new Date().toISOString();
+                            if (!r.updatedAt) r.updatedAt = r.createdAt;
+                            if (!r.order) r.order = 0;
+                        });
+                        localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
+                    } catch(e) {
+                        console.error('迁移菜谱数据失败:', e);
+                    }
+                }
+                
+                localStorage.setItem(STORAGE_KEYS.VERSION, DATA_VERSION);
+                console.log('数据迁移完成');
+            }
+        }
+        
+        checkDataMigration();
+        
+        // ==================== Service Worker 注册 ====================
         if('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker 注册成功'))
@@ -371,18 +545,21 @@
         // ==================== 全局配置 ====================
         const DEFAULT_CATEGORIES = ['饭类','粉类','小食','主菜','冷食','汤品','甜点','饮品'];
         const DEFAULT_UNITS = ['克','毫升','个','只','勺','茶匙','汤匙','斤','两','把','块','片','根','条','瓣','适量','少许','杯','碗','袋','包','瓶','支'];
+        const TRASH_RETENTION_DAYS = 30;
         const CREATOR_NAME = 'Chef KtZ';
         
         // ==================== 状态管理 ====================
-        let appConfig = JSON.parse(localStorage.getItem('appConfig')) || {
+        let appConfig = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG)) || {
             name: 'KtZ的日常研发菜单',
             slogan: '记录每一道美味的诞生过程',
             categories: [...DEFAULT_CATEGORIES],
             units: [...DEFAULT_UNITS]
         };
         
-        let folders = JSON.parse(localStorage.getItem('recipeFolders')) || [{id:'root',name:'根目录',parentId:null,order:0}];
-        let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+        let folders = JSON.parse(localStorage.getItem(STORAGE_KEYS.FOLDERS)) || [{id:'root',name:'根目录',parentId:null,order:0}];
+        let recipes = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECIPES)) || [];
+        let trash = JSON.parse(localStorage.getItem(STORAGE_KEYS.TRASH)) || [];
+        
         let currentFolderId = 'root';
         let selectedFolderId = null;
         let viewingId = null;
@@ -390,10 +567,87 @@
         let sortMode = false;
         let moveTargetId = null;
         let draggedItem = null;
-        let mainImageData = null; // 存储主图数据
-        
-        // PDF生成锁 - 防止重复下载
+        let mainImageData = null;
         let isGeneratingPDF = false;
+        
+        // ==================== 回收站管理 ====================
+        function cleanTrash() {
+            const now = new Date().getTime();
+            const retentionTime = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+            
+            const originalLength = trash.length;
+            trash = trash.filter(item => {
+                const deleteTime = new Date(item.deletedAt).getTime();
+                const daysLeft = Math.ceil((deleteTime + retentionTime - now) / (24 * 60 * 60 * 1000));
+                return daysLeft > 0;
+            });
+            
+            if (trash.length !== originalLength) {
+                localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+            }
+            
+            localStorage.setItem(STORAGE_KEYS.TRASH_LAST_CLEAN, new Date().toISOString());
+        }
+        
+        function getDaysLeft(deletedAt) {
+            const now = new Date().getTime();
+            const deleteTime = new Date(deletedAt).getTime();
+            const retentionTime = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+            const daysLeft = Math.ceil((deleteTime + retentionTime - now) / (24 * 60 * 60 * 1000));
+            return Math.max(0, daysLeft);
+        }
+        
+        cleanTrash();
+        setInterval(cleanTrash, 24 * 60 * 60 * 1000);
+        
+        function moveToTrash(recipe) {
+            const trashItem = {
+                ...recipe,
+                deletedAt: new Date().toISOString(),
+                originalFolderId: recipe.folderId
+            };
+            trash.unshift(trashItem);
+            localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+        }
+        
+        function restoreFromTrash(trashItem) {
+            const restoredRecipe = {
+                ...trashItem,
+                folderId: trashItem.originalFolderId || 'root',
+                restoredAt: new Date().toISOString()
+            };
+            delete restoredRecipe.deletedAt;
+            delete restoredRecipe.originalFolderId;
+            delete restoredRecipe.restoredAt;
+            
+            recipes.push(restoredRecipe);
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
+            
+            trash = trash.filter(t => t.id !== trashItem.id);
+            localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+        }
+        
+        function deleteFromTrashPermanently(trashItem) {
+            trash = trash.filter(t => t.id !== trashItem.id);
+            localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+        }
+        
+        function emptyTrash() {
+            if (trash.length === 0) {
+                showToast('回收站已经是空的');
+                return;
+            }
+            
+            if (!confirm(`确定要清空回收站吗？这将永久删除 ${trash.length} 个菜谱，无法恢复。`)) {
+                return;
+            }
+            
+            trash = [];
+            localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+            renderTrash();
+            updateStats();
+            showToast('回收站已清空');
+        }
         
         // ==================== 初始化 ====================
         function init() {
@@ -401,15 +655,289 @@
             renderCategoryOptions();
             renderMain();
             updateStats();
+            setupDragDrop();
         }
         
         init();
+        
+        // ==================== 导入导出功能 ====================
+        function showImportExport() {
+            switchPage('page-import-export');
+        }
+        
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+            document.getElementById('importFileInput').value = '';
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+        
+        function showExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+        
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+        
+        function setupDragDrop() {
+            const dropZone = document.getElementById('fileDropZone');
+            if (!dropZone) return;
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+            
+            dropZone.addEventListener('drop', handleDrop, false);
+            dropZone.addEventListener('click', () => {
+                document.getElementById('importFileInput').click();
+            }, false);
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                processImportFile(files[0]);
+            }
+        }
+        
+        function handleImportFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            processImportFile(file);
+        }
+        
+        function processImportFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showToast('请选择JSON文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    importData(data);
+                } catch (err) {
+                    showToast('文件格式错误：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function importData(data) {
+            if (!data.recipes || !Array.isArray(data.recipes)) {
+                showToast('无效的数据格式');
+                return;
+            }
+            
+            let importedCount = 0;
+            let skippedCount = 0;
+            
+            // 导入菜谱
+            data.recipes.forEach(importedRecipe => {
+                // 检查是否已存在（根据名称和创建时间判断）
+                const exists = recipes.some(r => 
+                    r.name === importedRecipe.name && 
+                    r.createdAt === importedRecipe.createdAt
+                );
+                
+                if (!exists) {
+                    // 生成新ID避免冲突
+                    importedRecipe.id = 'recipe_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    importedRecipe.importedAt = new Date().toISOString();
+                    
+                    // 确保文件夹存在
+                    if (importedRecipe.folderId && importedRecipe.folderId !== 'root') {
+                        const folderExists = folders.some(f => f.id === importedRecipe.folderId);
+                        if (!folderExists) {
+                            importedRecipe.folderId = 'root';
+                        }
+                    }
+                    
+                    recipes.push(importedRecipe);
+                    importedCount++;
+                } else {
+                    skippedCount++;
+                }
+            });
+            
+            // 导入文件夹（如果不存在）
+            if (data.folders && Array.isArray(data.folders)) {
+                data.folders.forEach(importedFolder => {
+                    if (importedFolder.id !== 'root') {
+                        const exists = folders.some(f => f.id === importedFolder.id);
+                        if (!exists) {
+                            folders.push(importedFolder);
+                        }
+                    }
+                });
+            }
+            
+            // 保存数据
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
+            localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
+            
+            // 更新分类
+            if (data.appConfig && data.appConfig.categories) {
+                const newCategories = data.appConfig.categories.filter(c => !appConfig.categories.includes(c));
+                if (newCategories.length > 0) {
+                    appConfig.categories = [...appConfig.categories, ...newCategories];
+                    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(appConfig));
+                    renderCategoryOptions();
+                }
+            }
+            
+            closeImportModal();
+            updateStats();
+            renderMain();
+            
+            let msg = `成功导入 ${importedCount} 个菜谱`;
+            if (skippedCount > 0) {
+                msg += `，跳过 ${skippedCount} 个重复菜谱`;
+            }
+            showToast(msg);
+        }
+        
+        function exportJSON() {
+            const exportData = {
+                version: DATA_VERSION,
+                exportDate: new Date().toISOString(),
+                appConfig: appConfig,
+                folders: folders,
+                recipes: recipes,
+                stats: {
+                    totalRecipes: recipes.length,
+                    totalFolders: folders.length - 1,
+                    totalTrash: trash.length
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `菜谱备份_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            closeExportModal();
+            showToast('JSON文件已下载');
+        }
+        
+        function exportExcel() {
+            // 准备数据
+            const excelData = recipes.map((recipe, index) => {
+                const seasoningsStr = recipe.seasonings ? 
+                    recipe.seasonings.map(s => `${s.name} ${s.amount}${s.unit}`).join('、') : '';
+                const ingredientsStr = recipe.ingredients ? 
+                    recipe.ingredients.map(i => `${i.name} ${i.amount}${i.unit}`).join('、') : '';
+                const stepsStr = recipe.steps ? 
+                    recipe.steps.map((step, idx) => `${idx + 1}. ${step.text}`).join('\n') : '';
+                
+                return {
+                    '序号': index + 1,
+                    '菜谱名称': recipe.name,
+                    '分类': recipe.category || '未分类',
+                    '调料': seasoningsStr,
+                    '食材': ingredientsStr,
+                    '步骤': stepsStr,
+                    '创建时间': new Date(recipe.createdAt).toLocaleString(),
+                    '最后更新': recipe.updatedAt ? new Date(recipe.updatedAt).toLocaleString() : ''
+                };
+            });
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            // 设置列宽
+            const colWidths = [
+                { wch: 6 },   // 序号
+                { wch: 20 },  // 菜谱名称
+                { wch: 12 },  // 分类
+                { wch: 40 },  // 调料
+                { wch: 40 },  // 食材
+                { wch: 60 },  // 步骤
+                { wch: 20 },  // 创建时间
+                { wch: 20 }   // 最后更新
+            ];
+            ws['!cols'] = colWidths;
+            
+            XLSX.utils.book_append_sheet(wb, ws, '菜谱列表');
+            
+            // 下载
+            XLSX.writeFile(wb, `菜谱清单_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            closeExportModal();
+            showToast('Excel文件已下载');
+        }
+        
+        function downloadExcel() {
+            // 单个菜谱导出为Excel
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (!recipe) return;
+            
+            const seasoningsStr = recipe.seasonings ? 
+                recipe.seasonings.map(s => `${s.name} ${s.amount}${s.unit}`).join('、') : '';
+            const ingredientsStr = recipe.ingredients ? 
+                recipe.ingredients.map(i => `${i.name} ${i.amount}${i.unit}`).join('、') : '';
+            const stepsStr = recipe.steps ? 
+                recipe.steps.map((step, idx) => `${idx + 1}. ${step.text}`).join('\n') : '';
+            
+            const excelData = [{
+                '菜谱名称': recipe.name,
+                '分类': recipe.category || '未分类',
+                '调料': seasoningsStr,
+                '食材': ingredientsStr,
+                '步骤': stepsStr,
+                '创建时间': new Date(recipe.createdAt).toLocaleString()
+            }];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            ws['!cols'] = [
+                { wch: 20 },  // 菜谱名称
+                { wch: 12 },  // 分类
+                { wch: 40 },  // 调料
+                { wch: 40 },  // 食材
+                { wch: 60 },  // 步骤
+                { wch: 20 }   // 创建时间
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, recipe.name);
+            XLSX.writeFile(wb, `${recipe.name}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            closeShare();
+            showToast('Excel文件已下载');
+        }
         
         // ==================== 统计更新 ====================
         function updateStats() {
             document.getElementById('statRecipes').textContent = recipes.length;
             document.getElementById('statFolders').textContent = folders.filter(f => f.id !== 'root').length;
-            document.getElementById('statCategories').textContent = appConfig.categories.length;
+            document.getElementById('statTrash').textContent = trash.length;
         }
         
         // ==================== 应用显示更新 ====================
@@ -440,7 +968,6 @@
             const file = input.files[0];
             if (!file) return;
             
-            // 检查文件大小（限制5MB）
             if (file.size > 5 * 1024 * 1024) {
                 showToast('图片大小不能超过5MB');
                 input.value = '';
@@ -558,7 +1085,7 @@
             appConfig.name = document.getElementById('settingAppName').value.trim() || appConfig.name;
             appConfig.slogan = document.getElementById('settingAppSlogan').value.trim();
             
-            localStorage.setItem('appConfig', JSON.stringify(appConfig));
+            localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(appConfig));
             updateAppDisplay();
             renderCategoryOptions();
             updateStats();
@@ -641,14 +1168,12 @@
             emptyState.classList.add('hidden');
             
             list.innerHTML = currentRecipes.map(r => {
-                // 获取主图或第一个步骤图片
                 let thumbHtml = '';
                 if (r.mainImage) {
                     thumbHtml = `<img src="${r.mainImage}" class="recipe-thumb" alt="${r.name}">`;
                 } else if (r.steps && r.steps[0] && r.steps[0].image) {
                     thumbHtml = `<img src="${r.steps[0].image}" class="recipe-thumb" alt="${r.name}">`;
                 } else {
-                    // 根据分类显示不同emoji
                     const emoji = getCategoryEmoji(r.category);
                     thumbHtml = `<div class="recipe-thumb-placeholder">${emoji}</div>`;
                 }
@@ -717,13 +1242,13 @@
                 const targetIndex = recipes.findIndex(r => r.id === targetId);
                 const [removed] = recipes.splice(draggedIndex, 1);
                 recipes.splice(targetIndex, 0, removed);
-                localStorage.setItem('recipes', JSON.stringify(recipes));
+                localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             } else {
                 const draggedIndex = folders.findIndex(f => f.id === draggedId);
                 const targetIndex = folders.findIndex(f => f.id === targetId);
                 const [removed] = folders.splice(draggedIndex, 1);
                 folders.splice(targetIndex, 0, removed);
-                localStorage.setItem('recipeFolders', JSON.stringify(folders));
+                localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
             }
             
             renderMain();
@@ -741,6 +1266,80 @@
             btn.classList.toggle('btn-success', sortMode);
             btn.classList.toggle('btn-info', !sortMode);
             renderMain();
+        }
+        
+        // ==================== 回收站页面 ====================
+        function showTrash() {
+            cleanTrash();
+            renderTrash();
+            switchPage('page-trash');
+        }
+        
+        function renderTrash() {
+            const list = document.getElementById('trashList');
+            const emptyState = document.getElementById('trashEmpty');
+            
+            if (trash.length === 0) {
+                list.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            list.innerHTML = trash.map(item => {
+                const daysLeft = getDaysLeft(item.deletedAt);
+                let thumbHtml = '';
+                if (item.mainImage) {
+                    thumbHtml = `<img src="${item.mainImage}" class="trash-thumb" alt="${item.name}">`;
+                } else if (item.steps && item.steps[0] && item.steps[0].image) {
+                    thumbHtml = `<img src="${item.steps[0].image}" class="trash-thumb" alt="${item.name}">`;
+                } else {
+                    const emoji = getCategoryEmoji(item.category);
+                    thumbHtml = `<div class="trash-thumb-placeholder">${emoji}</div>`;
+                }
+                
+                return `
+                <div class="trash-item" data-id="${item.id}">
+                    ${thumbHtml}
+                    <div class="trash-info">
+                        <div class="trash-title">${item.name}</div>
+                        <div class="trash-meta">
+                            ${item.category || '未分类'} · 
+                            删除于 ${new Date(item.deletedAt).toLocaleDateString()} · 
+                            <span class="days-left">剩余 ${daysLeft} 天</span>
+                        </div>
+                    </div>
+                    <div class="trash-actions">
+                        <button class="btn btn-success" onclick="restoreTrashItem('${item.id}')">恢复</button>
+                        <button class="btn btn-danger" onclick="permanentlyDelete('${item.id}')">彻底删除</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+        
+        function restoreTrashItem(id) {
+            const item = trash.find(t => t.id === id);
+            if (!item) return;
+            
+            restoreFromTrash(item);
+            renderTrash();
+            updateStats();
+            showToast('菜谱已恢复');
+        }
+        
+        function permanentlyDelete(id) {
+            const item = trash.find(t => t.id === id);
+            if (!item) return;
+            
+            if (!confirm(`确定要永久删除"${item.name}"吗？此操作不可恢复。`)) {
+                return;
+            }
+            
+            deleteFromTrashPermanently(item);
+            renderTrash();
+            updateStats();
+            showToast('已永久删除');
         }
         
         // ==================== 文件夹操作 ====================
@@ -769,7 +1368,7 @@
             };
             
             folders.push(newFolder);
-            localStorage.setItem('recipeFolders', JSON.stringify(folders));
+            localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
             closeFolderModal();
             renderMain();
             updateStats();
@@ -809,7 +1408,7 @@
             const newName = prompt('新名称：', folder.name);
             if (newName && newName.trim()) {
                 folder.name = newName.trim();
-                localStorage.setItem('recipeFolders', JSON.stringify(folders));
+                localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
                 renderMain();
                 showToast('重命名成功');
             }
@@ -836,8 +1435,8 @@
             }
             
             folders = folders.filter(f => f.id !== selectedFolderId);
-            localStorage.setItem('recipeFolders', JSON.stringify(folders));
-            localStorage.setItem('recipes', JSON.stringify(recipes));
+            localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             renderMain();
             updateStats();
             showToast('文件夹已删除');
@@ -847,7 +1446,7 @@
         // ==================== 菜谱编辑 ====================
         function showEdit() {
             editingId = null;
-            resetMainImage(); // 重置主图
+            resetMainImage();
             
             document.getElementById('edit-title').textContent = '📝 创建新菜谱';
             document.getElementById('name').value = '';
@@ -942,7 +1541,6 @@
                 return;
             }
             
-            // 收集调料
             const seasonings = [];
             document.querySelectorAll('.seasoning-row').forEach(row => {
                 const inputs = row.querySelectorAll('input, select');
@@ -951,13 +1549,12 @@
                 if (nameVal) {
                     seasonings.push({
                         name: nameVal,
-                        amount: amountVal, // 保持原样，不强制转数字
+                        amount: amountVal,
                         unit: inputs[2].value
                     });
                 }
             });
             
-            // 收集食材
             const ingredients = [];
             document.querySelectorAll('.ing-row').forEach(row => {
                 const inputs = row.querySelectorAll('input, select');
@@ -966,13 +1563,12 @@
                 if (nameVal) {
                     ingredients.push({
                         name: nameVal,
-                        amount: amountVal, // 保持原样，不强制转数字
+                        amount: amountVal,
                         unit: inputs[2].value
                     });
                 }
             });
             
-            // 收集步骤
             const steps = [];
             document.querySelectorAll('.step').forEach(step => {
                 const text = step.querySelector('.step-text').value.trim();
@@ -988,7 +1584,7 @@
             const recipeData = {
                 name: name,
                 category: document.getElementById('category').value,
-                mainImage: mainImageData, // 添加主图
+                mainImage: mainImageData,
                 seasonings: seasonings,
                 ingredients: ingredients,
                 steps: steps,
@@ -999,7 +1595,6 @@
             if (editingId) {
                 const index = recipes.findIndex(r => r.id === editingId);
                 if (index !== -1) {
-                    // 保留原有创建时间
                     recipeData.id = recipes[index].id;
                     recipeData.createdAt = recipes[index].createdAt;
                     recipeData.order = recipes[index].order;
@@ -1014,7 +1609,7 @@
                 showToast('菜谱创建成功');
             }
             
-            localStorage.setItem('recipes', JSON.stringify(recipes));
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             backToMain();
             updateStats();
         }
@@ -1029,17 +1624,14 @@
             
             let html = '<div class="card">';
             
-            // 显示主图
             if (recipe.mainImage) {
                 html += `<img src="${recipe.mainImage}" class="detail-img" onclick="window.open(this.src)" style="cursor:pointer">`;
             }
             
-            // 分类
             if (recipe.category) {
                 html += `<div style="display:inline-block;background:#667eea;color:#fff;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:15px">${recipe.category}</div>`;
             }
             
-            // 调料
             if (recipe.seasonings && recipe.seasonings.length > 0) {
                 html += `<div class="section-title">🧂 调料</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
                 recipe.seasonings.forEach(s => {
@@ -1049,7 +1641,6 @@
                 html += '</div>';
             }
             
-            // 食材
             if (recipe.ingredients && recipe.ingredients.length > 0) {
                 html += `<div class="section-title">🥘 食材</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
                 recipe.ingredients.forEach(i => {
@@ -1059,7 +1650,6 @@
                 html += '</div>';
             }
             
-            // 步骤
             if (recipe.steps && recipe.steps.length > 0) {
                 html += `<div class="section-title">📝 烹饪步骤</div>`;
                 recipe.steps.forEach((step, idx) => {
@@ -1075,7 +1665,6 @@
                 });
             }
             
-            // 时间信息
             html += `<div style="margin-top:20px;padding-top:15px;border-top:2px solid #f0f0f0;color:#999;font-size:13px;text-align:center">`;
             html += `创建时间：${new Date(recipe.createdAt).toLocaleString()}<br>`;
             if (recipe.updatedAt) {
@@ -1092,8 +1681,6 @@
             if (!recipe) return;
             
             editingId = viewingId;
-            
-            // 设置主图
             mainImageData = recipe.mainImage || null;
             updateMainImagePreview();
             
@@ -1127,13 +1714,19 @@
         }
         
         function doDelete() {
-            if (!confirm('确定要删除这个菜谱吗？此操作不可恢复。')) return;
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (!recipe) return;
             
+            if (!confirm(`确定要将"${recipe.name}"移入回收站吗？\n（30天内可从回收站恢复）`)) {
+                return;
+            }
+            
+            moveToTrash(recipe);
             recipes = recipes.filter(r => r.id !== viewingId);
-            localStorage.setItem('recipes', JSON.stringify(recipes));
+            localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             backToMain();
             updateStats();
-            showToast('菜谱已删除');
+            showToast('已移入回收站');
         }
         
         // ==================== 移动功能 ====================
@@ -1172,7 +1765,7 @@
             const recipe = recipes.find(r => r.id === viewingId);
             if (recipe) {
                 recipe.folderId = moveTargetId;
-                localStorage.setItem('recipes', JSON.stringify(recipes));
+                localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
                 showToast('移动成功');
                 backToMain();
             }
@@ -1351,7 +1944,7 @@
         function backToMain() {
             editingId = null;
             viewingId = null;
-            mainImageData = null; // 清除主图数据
+            mainImageData = null;
             switchPage('page-main');
             renderMain();
         }
