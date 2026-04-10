@@ -275,4 +275,1121 @@
                     <input type="text" class="input" id="newCategory" placeholder="输入新分类">
                     <button class="btn btn-small" onclick="addCategory()">添加</button>
                 </div>
-      
+                
+                <label style="display:block;margin:24px 0 10px;color:#666;font-size:14px;font-weight:500">单位选项</label>
+                <div class="tag-list" id="unitList"></div>
+                <div class="add-tag">
+                    <input type="text" class="input" id="newUnit" placeholder="输入新单位">
+                    <button class="btn btn-small" onclick="addUnit()">添加</button>
+                </div>
+                
+                <div style="margin-top:24px;padding:16px;background:#fff3cd;border-radius:12px;border:2px solid #ffeaa7">
+                    <div style="color:#856404;font-size:13px;font-weight:500">💡 提示</div>
+                    <div style="color:#856404;font-size:12px;margin-top:6px;line-height:1.5">
+                        所有数据保存在浏览器本地，清除浏览器数据会导致丢失。建议定期导出备份。
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex">
+                <button class="btn btn-success" onclick="saveSettings()">💾 保存设置</button>
+                <button class="btn btn-secondary" onclick="closeSettings()">❌ 取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分享弹窗 -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📤 分享菜谱</h3>
+            <div class="share-grid">
+                <div class="share-item" onclick="shareLink()">
+                    <span class="share-icon">🔗</span>
+                    <span class="share-text">复制链接</span>
+                </div>
+                <div class="share-item" onclick="saveImage()">
+                    <span class="share-icon">🖼️</span>
+                    <span class="share-text">保存图片</span>
+                </div>
+                <div class="share-item" onclick="handlePDFClick(event)">
+                    <span class="share-icon">📄</span>
+                    <span class="share-text">保存PDF</span>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeShare()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 新建文件夹弹窗 -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📁 新建文件夹</h3>
+            <input type="text" class="input" id="folderName" placeholder="文件夹名称" style="margin-bottom:20px">
+            <div class="flex">
+                <button class="btn btn-success" onclick="createFolder()">创建</button>
+                <button class="btn btn-secondary" onclick="closeFolderModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动弹窗 -->
+    <div id="moveModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📂 移动到</h3>
+            <div class="move-list" id="moveList"></div>
+            <div class="flex" style="margin-top:20px">
+                <button class="btn btn-success" onclick="confirmMove()">确认移动</button>
+                <button class="btn btn-secondary" onclick="closeMoveModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 文件夹菜单弹窗 -->
+    <div id="folderMenuModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">📁 文件夹操作</h3>
+            <div style="text-align:left;display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-secondary" onclick="enterFolder()" style="text-align:left;padding-left:20px">📂 打开文件夹</button>
+                <button class="btn btn-secondary" onclick="renameFolder()" style="text-align:left;padding-left:20px">✏️ 重命名</button>
+                <button class="btn btn-danger" onclick="deleteFolder()" style="text-align:left;padding-left:20px">🗑️ 删除文件夹</button>
+            </div>
+            <button class="close-btn" onclick="closeFolderMenu()" style="margin-top:20px">取消</button>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading" class="loading">处理中...</div>
+
+    <script>
+        // Service Worker 注册
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker 注册成功'))
+                .catch(err => console.log('Service Worker 注册失败:', err));
+        }
+        
+        // ==================== 全局配置 ====================
+        const DEFAULT_CATEGORIES = ['饭类','粉类','小食','主菜','冷食','汤品','甜点','饮品'];
+        const DEFAULT_UNITS = ['克','毫升','个','只','勺','茶匙','汤匙','斤','两','把','块','片','根','条','瓣','适量','少许','杯','碗','袋','包','瓶','支'];
+        const CREATOR_NAME = 'Chef KtZ';
+        
+        // ==================== 状态管理 ====================
+        let appConfig = JSON.parse(localStorage.getItem('appConfig')) || {
+            name: 'KtZ的日常研发菜单',
+            slogan: '记录每一道美味的诞生过程',
+            categories: [...DEFAULT_CATEGORIES],
+            units: [...DEFAULT_UNITS]
+        };
+        
+        let folders = JSON.parse(localStorage.getItem('recipeFolders')) || [{id:'root',name:'根目录',parentId:null,order:0}];
+        let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+        let currentFolderId = 'root';
+        let selectedFolderId = null;
+        let viewingId = null;
+        let editingId = null;
+        let sortMode = false;
+        let moveTargetId = null;
+        let draggedItem = null;
+        let mainImageData = null; // 存储主图数据
+        
+        // PDF生成锁 - 防止重复下载
+        let isGeneratingPDF = false;
+        
+        // ==================== 初始化 ====================
+        function init() {
+            updateAppDisplay();
+            renderCategoryOptions();
+            renderMain();
+            updateStats();
+        }
+        
+        init();
+        
+        // ==================== 统计更新 ====================
+        function updateStats() {
+            document.getElementById('statRecipes').textContent = recipes.length;
+            document.getElementById('statFolders').textContent = folders.filter(f => f.id !== 'root').length;
+            document.getElementById('statCategories').textContent = appConfig.categories.length;
+        }
+        
+        // ==================== 应用显示更新 ====================
+        function updateAppDisplay() {
+            document.getElementById('app-title').textContent = appConfig.name;
+            document.getElementById('appNameDisplay').value = appConfig.name;
+            document.getElementById('appSloganDisplay').value = appConfig.slogan;
+            document.title = appConfig.name;
+        }
+        
+        function renderCategoryOptions() {
+            const select = document.getElementById('category');
+            select.innerHTML = '<option value="">📂 选择分类</option>' +
+                appConfig.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+        
+        function getUnitOptions(selectedUnit = '') {
+            return '<option value="">单位</option>' +
+                appConfig.units.map(u => `<option value="${u}" ${u === selectedUnit ? 'selected' : ''}>${u}</option>`).join('');
+        }
+        
+        // ==================== 主图上传功能 ====================
+        function selectMainImage() {
+            document.getElementById('mainImageInput').click();
+        }
+        
+        function handleMainImageSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 检查文件大小（限制5MB）
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('图片大小不能超过5MB');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mainImageData = e.target.result;
+                updateMainImagePreview();
+                showToast('主图已选择');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function updateMainImagePreview() {
+            const preview = document.getElementById('mainImagePreview');
+            const placeholder = document.getElementById('mainImagePlaceholder');
+            const changeBtn = document.getElementById('changeMainImageBtn');
+            
+            if (mainImageData) {
+                preview.src = mainImageData;
+                preview.classList.add('has-image');
+                placeholder.classList.add('hidden');
+                changeBtn.classList.remove('hidden');
+            } else {
+                preview.src = '';
+                preview.classList.remove('has-image');
+                placeholder.classList.remove('hidden');
+                changeBtn.classList.add('hidden');
+            }
+        }
+        
+        function viewMainImage() {
+            if (mainImageData) {
+                window.open(mainImageData, '_blank');
+            }
+        }
+        
+        function resetMainImage() {
+            mainImageData = null;
+            document.getElementById('mainImageInput').value = '';
+            updateMainImagePreview();
+        }
+        
+        // ==================== 设置功能 ====================
+        function showSettings() {
+            document.getElementById('settingAppName').value = appConfig.name;
+            document.getElementById('settingAppSlogan').value = appConfig.slogan;
+            renderSettingsTags();
+            document.getElementById('settingsModal').classList.add('active');
+        }
+        
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+        
+        function renderSettingsTags() {
+            document.getElementById('categoryList').innerHTML = appConfig.categories.map((c, i) =>
+                `<span class="tag-item">${c}<span class="delete" onclick="removeCategory(${i})">×</span></span>`
+            ).join('');
+            
+            document.getElementById('unitList').innerHTML = appConfig.units.map((u, i) =>
+                `<span class="tag-item">${u}<span class="delete" onclick="removeUnit(${i})">×</span></span>`
+            ).join('');
+        }
+        
+        function addCategory() {
+            const input = document.getElementById('newCategory');
+            const value = input.value.trim();
+            if (!value) return;
+            if (appConfig.categories.includes(value)) {
+                showToast('分类已存在');
+                return;
+            }
+            appConfig.categories.push(value);
+            input.value = '';
+            renderSettingsTags();
+            updateStats();
+        }
+        
+        function removeCategory(index) {
+            if (appConfig.categories.length <= 1) {
+                showToast('至少保留一个分类');
+                return;
+            }
+            appConfig.categories.splice(index, 1);
+            renderSettingsTags();
+            updateStats();
+        }
+        
+        function addUnit() {
+            const input = document.getElementById('newUnit');
+            const value = input.value.trim();
+            if (!value) return;
+            if (appConfig.units.includes(value)) {
+                showToast('单位已存在');
+                return;
+            }
+            appConfig.units.push(value);
+            input.value = '';
+            renderSettingsTags();
+        }
+        
+        function removeUnit(index) {
+            if (appConfig.units.length <= 1) {
+                showToast('至少保留一个单位');
+                return;
+            }
+            appConfig.units.splice(index, 1);
+            renderSettingsTags();
+        }
+        
+        function saveSettings() {
+            appConfig.name = document.getElementById('settingAppName').value.trim() || appConfig.name;
+            appConfig.slogan = document.getElementById('settingAppSlogan').value.trim();
+            
+            localStorage.setItem('appConfig', JSON.stringify(appConfig));
+            updateAppDisplay();
+            renderCategoryOptions();
+            updateStats();
+            closeSettings();
+            showToast('设置已保存');
+        }
+        
+        // ==================== 主页面渲染 ====================
+        function renderMain() {
+            renderBreadcrumb();
+            renderFolders();
+            renderRecipes();
+        }
+        
+        function renderBreadcrumb() {
+            const bc = document.getElementById('breadcrumb');
+            let path = [];
+            let curr = folders.find(f => f.id === currentFolderId);
+            while (curr) {
+                path.unshift(curr);
+                curr = folders.find(f => f.id === curr.parentId);
+            }
+            
+            bc.innerHTML = path.map((f, i) => `
+                <span class="breadcrumb-item ${i === path.length - 1 ? 'active' : ''}" onclick="navigateTo('${f.id}')">
+                    ${f.id === 'root' ? '📁 根目录' : '📂 ' + f.name}
+                </span>
+                ${i < path.length - 1 ? '<span class="breadcrumb-separator">></span>' : ''}
+            `).join('');
+        }
+        
+        function renderFolders() {
+            const list = document.getElementById('folderList');
+            const currentFolders = folders.filter(f => f.parentId === currentFolderId).sort((a, b) => a.order - b.order);
+            
+            if (currentFolders.length === 0 && !sortMode) {
+                list.innerHTML = '';
+                return;
+            }
+            
+            list.innerHTML = currentFolders.map(f => `
+                <div class="folder-item" 
+                     ${sortMode ? 'draggable="true"' : `onclick="openFolderMenu('${f.id}')"`}
+                     data-id="${f.id}">
+                    ${sortMode ? '<span class="recipe-handle">⋮⋮</span>' : ''}
+                    <span class="folder-icon">📁</span>
+                    <span class="folder-name">${f.name}</span>
+                    <span class="folder-count">${getFolderCount(f.id)} 项</span>
+                    <span class="folder-arrow">›</span>
+                </div>
+            `).join('');
+            
+            if (sortMode) {
+                list.querySelectorAll('.folder-item').forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('drop', handleDrop);
+                    item.addEventListener('dragend', handleDragEnd);
+                });
+            }
+        }
+        
+        function getFolderCount(folderId) {
+            const subFolders = folders.filter(f => f.parentId === folderId).length;
+            const folderRecipes = recipes.filter(r => r.folderId === folderId).length;
+            return subFolders + folderRecipes;
+        }
+        
+        function renderRecipes() {
+            const list = document.getElementById('recipeList');
+            const currentRecipes = recipes.filter(r => r.folderId === currentFolderId).sort((a, b) => a.order - b.order);
+            const emptyState = document.getElementById('emptyState');
+            
+            if (currentRecipes.length === 0 && folders.filter(f => f.parentId === currentFolderId).length === 0) {
+                list.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            list.innerHTML = currentRecipes.map(r => {
+                // 获取主图或第一个步骤图片
+                let thumbHtml = '';
+                if (r.mainImage) {
+                    thumbHtml = `<img src="${r.mainImage}" class="recipe-thumb" alt="${r.name}">`;
+                } else if (r.steps && r.steps[0] && r.steps[0].image) {
+                    thumbHtml = `<img src="${r.steps[0].image}" class="recipe-thumb" alt="${r.name}">`;
+                } else {
+                    // 根据分类显示不同emoji
+                    const emoji = getCategoryEmoji(r.category);
+                    thumbHtml = `<div class="recipe-thumb-placeholder">${emoji}</div>`;
+                }
+                
+                return `
+                <div class="recipe" 
+                     ${sortMode ? 'draggable="true"' : `onclick="viewRecipe('${r.id}')"`}
+                     data-id="${r.id}"
+                     data-type="recipe">
+                    ${sortMode ? '<span class="recipe-handle">⋮⋮</span>' : ''}
+                    ${thumbHtml}
+                    <div class="recipe-info">
+                        <div class="recipe-title">${r.name}</div>
+                        <div class="recipe-meta">${r.category || '未分类'} · ${new Date(r.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <span class="folder-arrow">›</span>
+                </div>
+            `}).join('');
+            
+            if (sortMode) {
+                list.querySelectorAll('.recipe').forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragover', handleDragOver);
+                    item.addEventListener('drop', handleDrop);
+                    item.addEventListener('dragend', handleDragEnd);
+                });
+            }
+        }
+        
+        function getCategoryEmoji(category) {
+            const emojiMap = {
+                '饭类': '🍚',
+                '粉类': '🍜',
+                '小食': '🥟',
+                '主菜': '🍖',
+                '冷食': '🥗',
+                '汤品': '🍲',
+                '甜点': '🍰',
+                '饮品': '🥤'
+            };
+            return emojiMap[category] || '🍽️';
+        }
+        
+        // ==================== 拖拽排序 ====================
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            if (this === draggedItem) return;
+            
+            const draggedId = draggedItem.dataset.id;
+            const targetId = this.dataset.id;
+            const isRecipe = draggedItem.dataset.type === 'recipe';
+            
+            if (isRecipe) {
+                const draggedIndex = recipes.findIndex(r => r.id === draggedId);
+                const targetIndex = recipes.findIndex(r => r.id === targetId);
+                const [removed] = recipes.splice(draggedIndex, 1);
+                recipes.splice(targetIndex, 0, removed);
+                localStorage.setItem('recipes', JSON.stringify(recipes));
+            } else {
+                const draggedIndex = folders.findIndex(f => f.id === draggedId);
+                const targetIndex = folders.findIndex(f => f.id === targetId);
+                const [removed] = folders.splice(draggedIndex, 1);
+                folders.splice(targetIndex, 0, removed);
+                localStorage.setItem('recipeFolders', JSON.stringify(folders));
+            }
+            
+            renderMain();
+        }
+        
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            draggedItem = null;
+        }
+        
+        function toggleSortMode() {
+            sortMode = !sortMode;
+            const btn = document.getElementById('sortBtn');
+            btn.textContent = sortMode ? '✓ 完成排序' : '🔀 排序模式';
+            btn.classList.toggle('btn-success', sortMode);
+            btn.classList.toggle('btn-info', !sortMode);
+            renderMain();
+        }
+        
+        // ==================== 文件夹操作 ====================
+        function showNewFolder() {
+            document.getElementById('folderName').value = '';
+            document.getElementById('folderModal').classList.add('active');
+            setTimeout(() => document.getElementById('folderName').focus(), 100);
+        }
+        
+        function closeFolderModal() {
+            document.getElementById('folderModal').classList.remove('active');
+        }
+        
+        function createFolder() {
+            const name = document.getElementById('folderName').value.trim();
+            if (!name) {
+                showToast('请输入文件夹名称');
+                return;
+            }
+            
+            const newFolder = {
+                id: 'folder_' + Date.now(),
+                name: name,
+                parentId: currentFolderId,
+                order: folders.filter(f => f.parentId === currentFolderId).length
+            };
+            
+            folders.push(newFolder);
+            localStorage.setItem('recipeFolders', JSON.stringify(folders));
+            closeFolderModal();
+            renderMain();
+            updateStats();
+            showToast('文件夹创建成功');
+        }
+        
+        function openFolderMenu(folderId) {
+            selectedFolderId = folderId;
+            document.getElementById('folderMenuModal').classList.add('active');
+        }
+        
+        function closeFolderMenu() {
+            document.getElementById('folderMenuModal').classList.remove('active');
+            selectedFolderId = null;
+        }
+        
+        function enterFolder() {
+            if (selectedFolderId) {
+                navigateTo(selectedFolderId);
+                closeFolderMenu();
+            }
+        }
+        
+        function navigateTo(folderId) {
+            currentFolderId = folderId;
+            renderMain();
+        }
+        
+        function goHome() {
+            navigateTo('root');
+        }
+        
+        function renameFolder() {
+            const folder = folders.find(f => f.id === selectedFolderId);
+            if (!folder) return;
+            
+            const newName = prompt('新名称：', folder.name);
+            if (newName && newName.trim()) {
+                folder.name = newName.trim();
+                localStorage.setItem('recipeFolders', JSON.stringify(folders));
+                renderMain();
+                showToast('重命名成功');
+            }
+            closeFolderMenu();
+        }
+        
+        function deleteFolder() {
+            const folder = folders.find(f => f.id === selectedFolderId);
+            if (!folder) return;
+            
+            const count = getFolderCount(folder.id);
+            if (count > 0) {
+                if (!confirm(`该文件夹包含 ${count} 个项目，确定要删除吗？\n（内部项目将移动到根目录）`)) {
+                    closeFolderMenu();
+                    return;
+                }
+                folders.filter(f => f.parentId === folder.id).forEach(f => f.parentId = 'root');
+                recipes.filter(r => r.folderId === folder.id).forEach(r => r.folderId = 'root');
+            } else {
+                if (!confirm('确定要删除这个空文件夹吗？')) {
+                    closeFolderMenu();
+                    return;
+                }
+            }
+            
+            folders = folders.filter(f => f.id !== selectedFolderId);
+            localStorage.setItem('recipeFolders', JSON.stringify(folders));
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            renderMain();
+            updateStats();
+            showToast('文件夹已删除');
+            closeFolderMenu();
+        }
+        
+        // ==================== 菜谱编辑 ====================
+        function showEdit() {
+            editingId = null;
+            resetMainImage(); // 重置主图
+            
+            document.getElementById('edit-title').textContent = '📝 创建新菜谱';
+            document.getElementById('name').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('seasonings').innerHTML = '';
+            document.getElementById('ings').innerHTML = '';
+            document.getElementById('steps').innerHTML = '';
+            
+            addSeasoning();
+            addIng();
+            addStep();
+            
+            switchPage('page-edit');
+        }
+        
+        function addSeasoning(data = null) {
+            const div = document.createElement('div');
+            div.className = 'seasoning-row';
+            div.innerHTML = `
+                <input type="text" class="input" placeholder="调料名称" value="${data ? data.name : ''}">
+                <input type="text" class="input" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}">
+                <select class="input">${getUnitOptions(data ? data.unit : '')}</select>
+                <button class="delete-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('seasonings').appendChild(div);
+        }
+        
+        function addIng(data = null) {
+            const div = document.createElement('div');
+            div.className = 'ing-row';
+            div.innerHTML = `
+                <input type="text" class="input" placeholder="食材名称" value="${data ? data.name : ''}">
+                <input type="text" class="input" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}">
+                <select class="input">${getUnitOptions(data ? data.unit : '')}</select>
+                <button class="delete-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('ings').appendChild(div);
+        }
+        
+        function addStep(data = null) {
+            const stepIndex = document.querySelectorAll('.step').length + 1;
+            const div = document.createElement('div');
+            div.className = 'step';
+            div.innerHTML = `
+                <div class="step-header">
+                    <span class="step-num">${stepIndex}</span>
+                    <div class="step-content">
+                        <textarea class="step-text" placeholder="描述这一步的操作...">${data ? data.text : ''}</textarea>
+                        <img class="step-img ${data && data.image ? 'has-image' : ''}" src="${data && data.image ? data.image : ''}" onclick="selectStepImage(this)">
+                        <div class="upload-btn" onclick="this.previousElementSibling.previousElementSibling.click()">
+                            📷 ${data && data.image ? '更换图片' : '添加步骤图片'}
+                        </div>
+                        <input type="file" class="file-input" accept="image/*" onchange="previewImage(this)">
+                    </div>
+                    <button class="delete-btn" onclick="this.closest('.step').remove();reorderSteps()" style="margin-left:10px">×</button>
+                </div>
+            `;
+            document.getElementById('steps').appendChild(div);
+        }
+        
+        function reorderSteps() {
+            document.querySelectorAll('.step-num').forEach((el, i) => {
+                el.textContent = i + 1;
+            });
+        }
+        
+        function selectStepImage(img) {
+            if (img.src && img.classList.contains('has-image')) {
+                window.open(img.src, '_blank');
+            }
+        }
+        
+        function previewImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = input.previousElementSibling.previousElementSibling;
+                img.src = e.target.result;
+                img.classList.add('has-image');
+                input.previousElementSibling.textContent = '📷 更换图片';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function save() {
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                showToast('请输入菜谱名称');
+                document.getElementById('name').focus();
+                return;
+            }
+            
+            // 收集调料
+            const seasonings = [];
+            document.querySelectorAll('.seasoning-row').forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                const nameVal = inputs[0].value.trim();
+                const amountVal = inputs[1].value.trim();
+                if (nameVal) {
+                    seasonings.push({
+                        name: nameVal,
+                        amount: amountVal, // 保持原样，不强制转数字
+                        unit: inputs[2].value
+                    });
+                }
+            });
+            
+            // 收集食材
+            const ingredients = [];
+            document.querySelectorAll('.ing-row').forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                const nameVal = inputs[0].value.trim();
+                const amountVal = inputs[1].value.trim();
+                if (nameVal) {
+                    ingredients.push({
+                        name: nameVal,
+                        amount: amountVal, // 保持原样，不强制转数字
+                        unit: inputs[2].value
+                    });
+                }
+            });
+            
+            // 收集步骤
+            const steps = [];
+            document.querySelectorAll('.step').forEach(step => {
+                const text = step.querySelector('.step-text').value.trim();
+                const img = step.querySelector('.step-img');
+                if (text || img.classList.contains('has-image')) {
+                    steps.push({
+                        text: text,
+                        image: img.classList.contains('has-image') ? img.src : null
+                    });
+                }
+            });
+            
+            const recipeData = {
+                name: name,
+                category: document.getElementById('category').value,
+                mainImage: mainImageData, // 添加主图
+                seasonings: seasonings,
+                ingredients: ingredients,
+                steps: steps,
+                folderId: currentFolderId,
+                updatedAt: new Date().toISOString()
+            };
+            
+            if (editingId) {
+                const index = recipes.findIndex(r => r.id === editingId);
+                if (index !== -1) {
+                    // 保留原有创建时间
+                    recipeData.id = recipes[index].id;
+                    recipeData.createdAt = recipes[index].createdAt;
+                    recipeData.order = recipes[index].order;
+                    recipes[index] = recipeData;
+                    showToast('菜谱更新成功');
+                }
+            } else {
+                recipeData.id = 'recipe_' + Date.now();
+                recipeData.createdAt = new Date().toISOString();
+                recipeData.order = recipes.filter(r => r.folderId === currentFolderId).length;
+                recipes.push(recipeData);
+                showToast('菜谱创建成功');
+            }
+            
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            backToMain();
+            updateStats();
+        }
+        
+        // ==================== 菜谱查看 ====================
+        function viewRecipe(id) {
+            viewingId = id;
+            const recipe = recipes.find(r => r.id === id);
+            if (!recipe) return;
+            
+            document.getElementById('detail-name').textContent = recipe.name;
+            
+            let html = '<div class="card">';
+            
+            // 显示主图
+            if (recipe.mainImage) {
+                html += `<img src="${recipe.mainImage}" class="detail-img" onclick="window.open(this.src)" style="cursor:pointer">`;
+            }
+            
+            // 分类
+            if (recipe.category) {
+                html += `<div style="display:inline-block;background:#667eea;color:#fff;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:15px">${recipe.category}</div>`;
+            }
+            
+            // 调料
+            if (recipe.seasonings && recipe.seasonings.length > 0) {
+                html += `<div class="section-title">🧂 调料</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
+                recipe.seasonings.forEach(s => {
+                    const amount = s.amount || '';
+                    html += `<span style="background:#fff3e0;padding:8px 14px;border-radius:20px;font-size:14px">${s.name} ${amount}${s.unit}</span>`;
+                });
+                html += '</div>';
+            }
+            
+            // 食材
+            if (recipe.ingredients && recipe.ingredients.length > 0) {
+                html += `<div class="section-title">🥘 食材</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
+                recipe.ingredients.forEach(i => {
+                    const amount = i.amount || '';
+                    html += `<span style="background:#e8f5e9;padding:8px 14px;border-radius:20px;font-size:14px">${i.name} ${amount}${i.unit}</span>`;
+                });
+                html += '</div>';
+            }
+            
+            // 步骤
+            if (recipe.steps && recipe.steps.length > 0) {
+                html += `<div class="section-title">📝 烹饪步骤</div>`;
+                recipe.steps.forEach((step, idx) => {
+                    html += `<div class="step" style="background:#fff;border:2px solid #f0f0f0">`;
+                    html += `<div class="step-header"><span class="step-num">${idx + 1}</span><div style="flex:1">`;
+                    if (step.text) {
+                        html += `<div style="line-height:1.6">${step.text.replace(/\n/g, '<br>')}</div>`;
+                    }
+                    if (step.image) {
+                        html += `<img src="${step.image}" style="width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-top:10px" onclick="window.open(this.src)">`;
+                    }
+                    html += '</div></div></div>';
+                });
+            }
+            
+            // 时间信息
+            html += `<div style="margin-top:20px;padding-top:15px;border-top:2px solid #f0f0f0;color:#999;font-size:13px;text-align:center">`;
+            html += `创建时间：${new Date(recipe.createdAt).toLocaleString()}<br>`;
+            if (recipe.updatedAt) {
+                html += `最后更新：${new Date(recipe.updatedAt).toLocaleString()}`;
+            }
+            html += '</div></div>';
+            
+            document.getElementById('detail-content').innerHTML = html;
+            switchPage('page-detail');
+        }
+        
+        function doEdit() {
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (!recipe) return;
+            
+            editingId = viewingId;
+            
+            // 设置主图
+            mainImageData = recipe.mainImage || null;
+            updateMainImagePreview();
+            
+            document.getElementById('edit-title').textContent = '✏️ 编辑菜谱';
+            document.getElementById('name').value = recipe.name;
+            document.getElementById('category').value = recipe.category || '';
+            
+            document.getElementById('seasonings').innerHTML = '';
+            document.getElementById('ings').innerHTML = '';
+            document.getElementById('steps').innerHTML = '';
+            
+            if (recipe.seasonings && recipe.seasonings.length > 0) {
+                recipe.seasonings.forEach(s => addSeasoning(s));
+            } else {
+                addSeasoning();
+            }
+            
+            if (recipe.ingredients && recipe.ingredients.length > 0) {
+                recipe.ingredients.forEach(i => addIng(i));
+            } else {
+                addIng();
+            }
+            
+            if (recipe.steps && recipe.steps.length > 0) {
+                recipe.steps.forEach(s => addStep(s));
+            } else {
+                addStep();
+            }
+            
+            switchPage('page-edit');
+        }
+        
+        function doDelete() {
+            if (!confirm('确定要删除这个菜谱吗？此操作不可恢复。')) return;
+            
+            recipes = recipes.filter(r => r.id !== viewingId);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+            backToMain();
+            updateStats();
+            showToast('菜谱已删除');
+        }
+        
+        // ==================== 移动功能 ====================
+        function showMove() {
+            const list = document.getElementById('moveList');
+            const currentRecipe = recipes.find(r => r.id === viewingId);
+            
+            let html = `<div class="move-item ${currentRecipe.folderId === 'root' ? 'selected' : ''}" onclick="selectMoveTarget('root')">
+                <span>📁</span><span>根目录</span>
+            </div>`;
+            
+            folders.filter(f => f.id !== 'root').forEach(f => {
+                html += `<div class="move-item ${currentRecipe.folderId === f.id ? 'selected' : ''}" onclick="selectMoveTarget('${f.id}')">
+                    <span>📁</span><span>${f.name}</span>
+                </div>`;
+            });
+            
+            list.innerHTML = html;
+            document.getElementById('moveModal').classList.add('active');
+        }
+        
+        function selectMoveTarget(folderId) {
+            moveTargetId = folderId;
+            document.querySelectorAll('.move-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+        }
+        
+        function confirmMove() {
+            if (!moveTargetId) {
+                showToast('请选择目标文件夹');
+                return;
+            }
+            
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (recipe) {
+                recipe.folderId = moveTargetId;
+                localStorage.setItem('recipes', JSON.stringify(recipes));
+                showToast('移动成功');
+                backToMain();
+            }
+            closeMoveModal();
+        }
+        
+        function closeMoveModal() {
+            document.getElementById('moveModal').classList.remove('active');
+            moveTargetId = null;
+        }
+        
+        // ==================== 分享功能 ====================
+        function showShare() {
+            isGeneratingPDF = false;
+            document.getElementById('shareModal').classList.add('active');
+        }
+        
+        function closeShare() {
+            document.getElementById('shareModal').classList.remove('active');
+            isGeneratingPDF = false;
+        }
+        
+        function shareLink() {
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (!recipe) return;
+            
+            const text = `【${recipe.name}】\n分类：${recipe.category || '未分类'}\n\n来自：${appConfig.name}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: recipe.name,
+                    text: text
+                }).catch(() => {
+                    copyToClipboard(text);
+                });
+            } else {
+                copyToClipboard(text);
+            }
+        }
+        
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('链接已复制'));
+            } else {
+                const input = document.createElement('input');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('链接已复制');
+            }
+        }
+        
+        function saveImage() {
+            const element = document.getElementById('detail-content');
+            const recipe = recipes.find(r => r.id === viewingId);
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${recipe.name}_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                showToast('图片已保存');
+            }).catch(err => {
+                console.error('保存图片失败:', err);
+                showToast('保存失败，请重试');
+            }).finally(() => {
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+        
+        function handlePDFClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            savePDF();
+        }
+        
+        function savePDF() {
+            if (isGeneratingPDF) {
+                console.log('PDF生成中，请稍候...');
+                return;
+            }
+            
+            isGeneratingPDF = true;
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            loading.textContent = '生成PDF中...';
+            
+            const element = document.getElementById('detail-content');
+            const recipe = recipes.find(r => r.id === viewingId);
+            const recipeName = recipe ? recipe.name : '菜谱';
+            
+            setTimeout(() => {
+                html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    allowTaint: true
+                }).then(canvas => {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const margin = 10;
+                    
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = (pdfWidth - 2 * margin) / imgWidth;
+                    const scaledHeight = imgHeight * ratio;
+                    
+                    let heightLeft = scaledHeight;
+                    let position = margin;
+                    const availableHeight = pdfHeight - 2 * margin;
+                    
+                    pdf.addImage(
+                        canvas.toDataURL('image/png', 1.0), 
+                        'PNG', 
+                        margin, 
+                        margin, 
+                        pdfWidth - 2 * margin, 
+                        scaledHeight
+                    );
+                    heightLeft -= availableHeight;
+                    
+                    while (heightLeft > 0) {
+                        position = margin - (scaledHeight - heightLeft - availableHeight);
+                        pdf.addPage();
+                        pdf.addImage(
+                            canvas.toDataURL('image/png', 1.0), 
+                            'PNG', 
+                            margin, 
+                            position, 
+                            pdfWidth - 2 * margin, 
+                            scaledHeight
+                        );
+                        heightLeft -= availableHeight;
+                    }
+                    
+                    const timestamp = new Date().toISOString().slice(0,10);
+                    pdf.save(`${recipeName}_${timestamp}.pdf`);
+                    
+                    showToast('PDF已保存');
+                    
+                }).catch(err => {
+                    console.error('PDF生成失败:', err);
+                    showToast('PDF生成失败，请重试');
+                }).finally(() => {
+                    setTimeout(() => {
+                        isGeneratingPDF = false;
+                        loading.style.display = 'none';
+                        closeShare();
+                    }, 1000);
+                });
+            }, 100);
+        }
+        
+        // ==================== 页面切换 ====================
+        function switchPage(pageId) {
+            document.querySelectorAll('[id^="page-"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+        
+        function backToMain() {
+            editingId = null;
+            viewingId = null;
+            mainImageData = null; // 清除主图数据
+            switchPage('page-main');
+            renderMain();
+        }
+        
+        // ==================== 工具函数 ====================
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.8);
+                color: #fff;
+                padding: 14px 28px;
+                border-radius: 30px;
+                font-size: 14px;
+                z-index: 3000;
+                animation: fadeIn 0.3s ease;
+                font-weight: 500;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 2500);
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
