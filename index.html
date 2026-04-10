@@ -41,8 +41,20 @@
         .input:focus{outline:none;border-color:#667eea;background:#fff;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
         select.input{background:#fff;cursor:pointer}
         
-        /* 列表样式优化 - 修复点击过快问题 */
-        .recipe{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#f8f9fa;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;border:2px solid transparent;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+        /* ==================== 关键修复：触摸行为优化 ==================== */
+        .recipe, .folder-item {
+            /* 消除300ms点击延迟，但保留滚动和缩放  */
+            touch-action: manipulation;
+            /* 禁用iOS长按菜单  */
+            -webkit-touch-callout: none;
+            /* 禁用文本选择 */
+            -webkit-user-select: none;
+            user-select: none;
+            /* 禁用高亮 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .recipe{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#f8f9fa;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;border:2px solid transparent;overflow:hidden;position:relative}
         .recipe:hover{background:#e8eaf6;border-color:#667eea;transform:translateX(5px)}
         .recipe:active{background:#dde5ff;transform:scale(0.98)}
         .recipe.dragging{opacity:0.5;background:#e3f2fd}
@@ -50,7 +62,7 @@
         .recipe.long-pressing .recipe-title{color:#fff}
         .recipe.long-pressing .recipe-meta{color:#e0e0e0}
         
-        .folder-item{display:flex;align-items:center;padding:18px;background:#fff;border-radius:14px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.3s;border:2px solid transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+        .folder-item{display:flex;align-items:center;padding:18px;background:#fff;border-radius:14px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.3s;border:2px solid transparent;position:relative}
         .folder-item:hover{transform:translateX(8px);box-shadow:0 8px 20px rgba(0,0,0,0.12);border-color:#667eea}
         .folder-item:active{background:#f0f4ff;transform:scale(0.98)}
         .folder-item.long-pressing{background:#667eea;transform:scale(0.98)}
@@ -78,7 +90,6 @@
         .step-content{flex:1}
         .step-text{width:100%;min-height:60px;margin-bottom:10px}
         
-        /* 调料食材列表样式 */
         .ing-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
         .ing-item{display:flex;align-items:center;padding:12px 16px;background:#fff;border-radius:10px;border:1px solid #e8e8e8;transition:all 0.2s}
         .ing-item:hover{border-color:#667eea;transform:translateX(4px);box-shadow:0 2px 8px rgba(102,126,234,0.1)}
@@ -154,7 +165,6 @@
         .stat-num{font-size:24px;font-weight:bold;color:#667eea}
         .stat-label{font-size:12px;color:#888;margin-top:4px}
         
-        /* 主图上传样式 */
         .main-image-container{margin-bottom:20px;text-align:center}
         .main-image-preview{width:100%;max-height:300px;object-fit:cover;border-radius:16px;display:none;margin-bottom:12px;border:3px solid #e8e8e8}
         .main-image-preview.has-image{display:block;border-color:#667eea}
@@ -166,7 +176,6 @@
         .main-image-change-btn{position:absolute;bottom:15px;right:15px;background:rgba(102,126,234,0.9);color:#fff;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;backdrop-filter:blur(10px);transition:all 0.3s}
         .main-image-change-btn:hover{background:#667eea;transform:scale(1.05)}
         
-        /* 回收站样式 */
         .trash-item{display:flex;align-items:center;padding:16px;background:#fff;border-radius:12px;margin-bottom:12px;border:2px solid #fee2e2;transition:all 0.3s}
         .trash-item:hover{border-color:#fecaca;transform:translateX(5px)}
         .trash-thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;margin-right:12px;background:#f0f0f0;flex-shrink:0}
@@ -181,7 +190,6 @@
         .trash-warning{background:#fff5f5;border:2px solid #fed7d7;border-radius:12px;padding:16px;margin-bottom:20px;color:#c53030;font-size:14px}
         .trash-warning strong{color:#9b2c2c}
         
-        /* 导入导出样式 */
         .import-export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
         .import-export-item{padding:24px 16px;border:2px solid #e8e8e8;border-radius:16px;cursor:pointer;transition:all 0.3s;background:#fafafa;text-align:center}
         .import-export-item:hover{border-color:#667eea;background:#f0f4ff;transform:translateY(-3px);box-shadow:0 8px 20px rgba(102,126,234,0.2)}
@@ -196,17 +204,18 @@
         .file-drop-zone .text{color:#667eea;font-size:14px;font-weight:500}
         .file-drop-zone .hint{color:#888;font-size:12px;margin-top:8px}
         
-        /* 长按菜单样式 */
         .long-press-menu{position:fixed;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.3);padding:16px;z-index:3000;min-width:200px;animation:fadeIn 0.2s ease}
         .long-press-menu-item{padding:14px 18px;border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:15px;display:flex;align-items:center;gap:12px}
         .long-press-menu-item:hover{background:#f0f4ff;color:#667eea}
         .long-press-menu-item.delete:hover{background:#fff5f5;color:#ff6b6b}
         .long-press-menu-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:2999;backdrop-filter:blur(2px)}
         
-        /* 搜索框样式 */
         .search-box{margin-bottom:15px}
         .search-input{width:100%;padding:14px 20px;border:2px solid #e8e8e8;border-radius:25px;font-size:15px;background:#fff;transition:all 0.3s}
         .search-input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+        
+        .error-toast{background:#ff6b6b !important;color:#fff !important;max-width:80% !important;white-space:normal !important;line-height:1.5 !important;}
+        .success-toast{background:#52c41a !important;}
         
         @media(max-width:480px){
             .ing-row,.seasoning-row{grid-template-columns:1fr 1fr;gap:8px}
@@ -541,8 +550,77 @@
     <div id="loading" class="loading">处理中...</div>
 
     <script>
+        // ==================== IndexedDB 图片存储管理器 ====================
+        const ImageDB = {
+            db: null,
+            dbName: 'RecipeImageDB',
+            storeName: 'images',
+            version: 1,
+            
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve();
+                    };
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            db.createObjectStore(this.storeName, { keyPath: 'id' });
+                        }
+                    };
+                });
+            },
+            
+            async saveImage(id, imageData) {
+                if (!this.db) await this.init();
+                
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    
+                    const request = store.put({ id, data: imageData, timestamp: Date.now() });
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            
+            async getImage(id) {
+                if (!this.db) await this.init();
+                
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readonly');
+                    const store = transaction.objectStore(this.storeName);
+                    
+                    const request = store.get(id);
+                    
+                    request.onsuccess = () => resolve(request.result ? request.result.data : null);
+                    request.onerror = () => reject(request.error);
+                });
+            },
+            
+            async deleteImage(id) {
+                if (!this.db) await this.init();
+                
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    
+                    const request = store.delete(id);
+                    
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            }
+        };
+        
         // ==================== 数据版本管理 ====================
-        const DATA_VERSION = '2.3';
+        const DATA_VERSION = '2.4';
         const STORAGE_KEYS = {
             VERSION: 'appDataVersion',
             CONFIG: 'appConfig',
@@ -591,9 +669,15 @@
         const DEFAULT_CATEGORIES = ['饭类','粉类','小食','主菜','冷食','汤品','甜点','饮品'];
         const DEFAULT_UNITS = ['克','毫升','个','只','勺','茶匙','汤匙','斤','两','把','块','片','根','条','瓣','适量','少许','杯','碗','袋','包','瓶','支'];
         const TRASH_RETENTION_DAYS = 30;
-        const LONG_PRESS_DURATION = 600; // 长按触发时间（毫秒）
-        const CLICK_DELAY = 150; // 点击延迟，防止过快触发
         const CREATOR_NAME = 'Chef KtZ';
+        
+        // ==================== 触摸交互配置 ====================
+        const TOUCH_CONFIG = {
+            MOVE_THRESHOLD: 15,        // 移动超过15px视为滑动
+            TIME_THRESHOLD: 500,       // 超过500ms视为长按
+            CLICK_DELAY: 0,            // 无延迟（CSS touch-action: manipulation 已消除300ms延迟）
+            LONG_PRESS_DURATION: 600   // 长按触发时间
+        };
         
         // ==================== 状态管理 ====================
         let appConfig = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG)) || {
@@ -619,12 +703,95 @@
         let isGeneratingPDF = false;
         let searchKeyword = '';
         
-        // 长按相关状态 - 修复点击过快问题
-        let longPressTimer = null;
-        let longPressTarget = null;
-        let isLongPressTriggered = false;
-        let clickTimer = null;
-        let isProcessingClick = false;
+        // ==================== 触摸状态管理器（修复滑动误触） ====================
+        const TouchManager = {
+            startX: 0,
+            startY: 0,
+            startTime: 0,
+            target: null,
+            isLongPress: false,
+            hasMoved: false,
+            longPressTimer: null,
+            
+            reset() {
+                this.startX = 0;
+                this.startY = 0;
+                this.startTime = 0;
+                this.target = null;
+                this.isLongPress = false;
+                this.hasMoved = false;
+                if (this.longPressTimer) {
+                    clearTimeout(this.longPressTimer);
+                    this.longPressTimer = null;
+                }
+            },
+            
+            start(e, element, longPressCallback) {
+                const touch = e.touches ? e.touches[0] : e;
+                this.startX = touch.clientX;
+                this.startY = touch.clientY;
+                this.startTime = Date.now();
+                this.target = element;
+                this.isLongPress = false;
+                this.hasMoved = false;
+                
+                // 添加长按视觉反馈
+                this.longPressTimer = setTimeout(() => {
+                    this.isLongPress = true;
+                    element.classList.add('long-pressing');
+                    
+                    // 触发长按菜单
+                    setTimeout(() => {
+                        element.classList.remove('long-pressing');
+                        longPressCallback();
+                    }, 100);
+                }, TOUCH_CONFIG.LONG_PRESS_DURATION);
+            },
+            
+            move(e) {
+                if (!this.target || this.hasMoved) return;
+                
+                const touch = e.touches ? e.touches[0] : e;
+                const deltaX = Math.abs(touch.clientX - this.startX);
+                const deltaY = Math.abs(touch.clientY - this.startY);
+                
+                // 如果移动超过阈值，取消长按和点击
+                if (deltaX > TOUCH_CONFIG.MOVE_THRESHOLD || 
+                    deltaY > TOUCH_CONFIG.MOVE_THRESHOLD) {
+                    
+                    this.hasMoved = true;
+                    clearTimeout(this.longPressTimer);
+                    this.target.classList.remove('long-pressing');
+                    this.target = null;
+                }
+            },
+            
+            end(clickCallback) {
+                clearTimeout(this.longPressTimer);
+                
+                if (this.target) {
+                    this.target.classList.remove('long-pressing');
+                }
+                
+                // 如果是长按或已移动，不处理点击
+                if (this.isLongPress || this.hasMoved || !this.target) {
+                    this.reset();
+                    return false; // 不触发点击
+                }
+                
+                // 检查时间，如果太长可能是误触
+                const deltaTime = Date.now() - this.startTime;
+                if (deltaTime > TOUCH_CONFIG.TIME_THRESHOLD) {
+                    this.reset();
+                    return false;
+                }
+                
+                // 立即触发点击（CSS touch-action: manipulation 已消除延迟）
+                clickCallback();
+                this.reset();
+                return true;
+            }
+        };
         
         // ==================== 回收站管理 ====================
         function cleanTrash() {
@@ -656,7 +823,7 @@
         cleanTrash();
         setInterval(cleanTrash, 24 * 60 * 60 * 1000);
         
-        function moveToTrash(recipe) {
+        async function moveToTrash(recipe) {
             const trashItem = {
                 ...recipe,
                 deletedAt: new Date().toISOString(),
@@ -664,9 +831,18 @@
             };
             trash.unshift(trashItem);
             localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
+            
+            if (recipe.mainImage && recipe.mainImage.startsWith('indexeddb://')) {
+                const imageId = recipe.mainImage.replace('indexeddb://', '');
+                const imageData = await ImageDB.getImage(imageId);
+                if (imageData) {
+                    await ImageDB.saveImage('trash_' + imageId, imageData);
+                    await ImageDB.deleteImage(imageId);
+                }
+            }
         }
         
-        function restoreFromTrash(trashItem) {
+        async function restoreFromTrash(trashItem) {
             const restoredRecipe = {
                 ...trashItem,
                 folderId: trashItem.originalFolderId || 'root',
@@ -676,6 +852,15 @@
             delete restoredRecipe.originalFolderId;
             delete restoredRecipe.restoredAt;
             
+            if (restoredRecipe.mainImage && restoredRecipe.mainImage.startsWith('indexeddb://')) {
+                const imageId = restoredRecipe.mainImage.replace('indexeddb://', '');
+                const imageData = await ImageDB.getImage('trash_' + imageId);
+                if (imageData) {
+                    await ImageDB.saveImage(imageId, imageData);
+                    await ImageDB.deleteImage('trash_' + imageId);
+                }
+            }
+            
             recipes.push(restoredRecipe);
             localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             
@@ -683,7 +868,22 @@
             localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
         }
         
-        function deleteFromTrashPermanently(trashItem) {
+        async function deleteFromTrashPermanently(trashItem) {
+            if (trashItem.mainImage && trashItem.mainImage.startsWith('indexeddb://')) {
+                const imageId = trashItem.mainImage.replace('indexeddb://', '');
+                await ImageDB.deleteImage(imageId);
+                await ImageDB.deleteImage('trash_' + imageId);
+            }
+            
+            if (trashItem.steps) {
+                for (const step of trashItem.steps) {
+                    if (step.image && step.image.startsWith('indexeddb://')) {
+                        const imageId = step.image.replace('indexeddb://', '');
+                        await ImageDB.deleteImage(imageId);
+                    }
+                }
+            }
+            
             trash = trash.filter(t => t.id !== trashItem.id);
             localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
         }
@@ -698,6 +898,14 @@
                 return;
             }
             
+            trash.forEach(async item => {
+                if (item.mainImage && item.mainImage.startsWith('indexeddb://')) {
+                    const imageId = item.mainImage.replace('indexeddb://', '');
+                    await ImageDB.deleteImage(imageId);
+                    await ImageDB.deleteImage('trash_' + imageId);
+                }
+            });
+            
             trash = [];
             localStorage.setItem(STORAGE_KEYS.TRASH, JSON.stringify(trash));
             renderTrash();
@@ -705,81 +913,71 @@
             showToast('回收站已清空');
         }
         
-        // ==================== 长按菜单功能 - 修复点击过快问题 ====================
+        // ==================== 长按菜单功能（修复版） ====================
         function initLongPress(element, type, id) {
-            // 移除旧的事件监听器（防止重复绑定）
+            // 克隆元素防止重复绑定
             const newElement = element.cloneNode(true);
             element.parentNode.replaceChild(newElement, element);
             
-            const startHandler = (e) => {
-                if (sortMode) return;
-                
-                // 防止快速重复触发
-                if (isProcessingClick) return;
-                
-                isLongPressTriggered = false;
-                longPressTarget = { type, id, element: newElement };
-                
-                // 添加长按视觉反馈
-                newElement.classList.add('long-pressing');
-                
-                longPressTimer = setTimeout(() => {
-                    isLongPressTriggered = true;
-                    newElement.classList.remove('long-pressing');
-                    showLongPressMenu(e, type, id);
-                }, LONG_PRESS_DURATION);
-            };
-            
-            const endHandler = (e) => {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                newElement.classList.remove('long-pressing');
-                
-                // 如果不是长按触发，则延迟执行点击操作（防止过快）
-                if (!isLongPressTriggered && longPressTarget && !isProcessingClick) {
-                    isProcessingClick = true;
-                    
-                    clickTimer = setTimeout(() => {
-                        if (type === 'folder') {
-                            navigateTo(id);
-                        } else if (type === 'recipe') {
-                            viewRecipe(id);
-                        }
-                        isProcessingClick = false;
-                    }, CLICK_DELAY);
-                }
-                longPressTarget = null;
-            };
-            
-            const cancelHandler = () => {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                if (clickTimer) {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                }
-                newElement.classList.remove('long-pressing');
-                longPressTarget = null;
-                isProcessingClick = false;
-            };
-            
-            // 鼠标事件
-            newElement.addEventListener('mousedown', startHandler);
-            newElement.addEventListener('mouseup', endHandler);
-            newElement.addEventListener('mouseleave', cancelHandler);
-            
-            // 触摸事件
+            // 触摸事件 - 使用 passive 不阻塞滚动
             newElement.addEventListener('touchstart', (e) => {
-                startHandler(e.touches[0]);
+                if (sortMode) return;
+                TouchManager.start(e, newElement, () => {
+                    showLongPressMenu(e.touches[0], type, id);
+                });
             }, { passive: true });
-            newElement.addEventListener('touchend', endHandler);
-            newElement.addEventListener('touchcancel', cancelHandler);
             
-            // 防止上下文菜单
+            newElement.addEventListener('touchmove', (e) => {
+                TouchManager.move(e);
+            }, { passive: true });
+            
+            newElement.addEventListener('touchend', (e) => {
+                const shouldPrevent = TouchManager.end(() => {
+                    if (type === 'folder') {
+                        navigateTo(id);
+                    } else if (type === 'recipe') {
+                        viewRecipe(id);
+                    }
+                });
+                
+                if (shouldPrevent) {
+                    e.preventDefault(); // 阻止默认的300ms延迟点击
+                }
+            }, { passive: false });
+            
+            newElement.addEventListener('touchcancel', () => {
+                TouchManager.reset();
+                newElement.classList.remove('long-pressing');
+            }, { passive: true });
+            
+            // 鼠标事件（桌面端）
+            newElement.addEventListener('mousedown', (e) => {
+                if (sortMode) return;
+                TouchManager.start(e, newElement, () => {
+                    showLongPressMenu(e, type, id);
+                });
+            });
+            
+            newElement.addEventListener('mousemove', (e) => {
+                TouchManager.move(e);
+            });
+            
+            newElement.addEventListener('mouseup', () => {
+                TouchManager.end(() => {
+                    if (type === 'folder') {
+                        navigateTo(id);
+                    } else if (type === 'recipe') {
+                        viewRecipe(id);
+                    }
+                });
+            });
+            
+            newElement.addEventListener('mouseleave', () => {
+                TouchManager.reset();
+                newElement.classList.remove('long-pressing');
+            });
+            
+            // 阻止上下文菜单
             newElement.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 return false;
@@ -793,17 +991,9 @@
             const menu = document.getElementById('longPressMenu');
             const overlay = document.getElementById('longPressMenuOverlay');
             
-            // 获取点击位置
-            let clientX, clientY;
-            if (e.type && e.type.startsWith('touch')) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
+            let clientX = e.clientX;
+            let clientY = e.clientY;
             
-            // 先显示才能获取尺寸
             menu.classList.remove('hidden');
             overlay.classList.remove('hidden');
             
@@ -811,17 +1001,14 @@
             const menuWidth = menuRect.width || 200;
             const menuHeight = menuRect.height || 150;
             
-            // 边界检测：确保菜单不超出屏幕
             let left = clientX - menuWidth / 2;
             let top = clientY - menuHeight / 2;
             
-            // 水平边界
             if (left < 10) left = 10;
             if (left + menuWidth > window.innerWidth - 10) {
                 left = window.innerWidth - menuWidth - 10;
             }
             
-            // 垂直边界
             if (top < 10) top = 10;
             if (top + menuHeight > window.innerHeight - 10) {
                 top = window.innerHeight - menuHeight - 10;
@@ -830,7 +1017,6 @@
             menu.style.left = left + 'px';
             menu.style.top = top + 'px';
             
-            // 更新菜单项
             const openItem = menu.querySelector('.long-press-menu-item:nth-child(1)');
             const renameItem = menu.querySelector('.long-press-menu-item:nth-child(2)');
             const deleteItem = menu.querySelector('.long-press-menu-item:nth-child(3)');
@@ -887,7 +1073,8 @@
         }
         
         // ==================== 初始化 ====================
-        function init() {
+        async function init() {
+            await ImageDB.init();
             updateAppDisplay();
             renderCategoryOptions();
             renderMain();
@@ -982,7 +1169,7 @@
             reader.readAsText(file);
         }
         
-        function importData(data) {
+        async function importData(data) {
             if (!data.recipes || !Array.isArray(data.recipes)) {
                 showToast('无效的数据格式');
                 return;
@@ -991,7 +1178,7 @@
             let importedCount = 0;
             let skippedCount = 0;
             
-            data.recipes.forEach(importedRecipe => {
+            for (const importedRecipe of data.recipes) {
                 const exists = recipes.some(r => 
                     r.name === importedRecipe.name && 
                     r.createdAt === importedRecipe.createdAt
@@ -1008,12 +1195,18 @@
                         }
                     }
                     
+                    if (importedRecipe.mainImage && importedRecipe.mainImage.startsWith('data:')) {
+                        const imageId = 'img_' + importedRecipe.id;
+                        await ImageDB.saveImage(imageId, importedRecipe.mainImage);
+                        importedRecipe.mainImage = 'indexeddb://' + imageId;
+                    }
+                    
                     recipes.push(importedRecipe);
                     importedCount++;
                 } else {
                     skippedCount++;
                 }
-            });
+            }
             
             if (data.folders && Array.isArray(data.folders)) {
                 data.folders.forEach(importedFolder => {
@@ -1049,13 +1242,37 @@
             showToast(msg);
         }
         
-        function exportJSON() {
+        async function exportJSON() {
+            const exportRecipes = [];
+            for (const recipe of recipes) {
+                const exportRecipe = { ...recipe };
+                
+                if (exportRecipe.mainImage && exportRecipe.mainImage.startsWith('indexeddb://')) {
+                    const imageId = exportRecipe.mainImage.replace('indexeddb://', '');
+                    const imageData = await ImageDB.getImage(imageId);
+                    exportRecipe.mainImage = imageData;
+                }
+                
+                if (exportRecipe.steps) {
+                    exportRecipe.steps = await Promise.all(exportRecipe.steps.map(async step => {
+                        if (step.image && step.image.startsWith('indexeddb://')) {
+                            const imageId = step.image.replace('indexeddb://', '');
+                            const imageData = await ImageDB.getImage(imageId);
+                            return { ...step, image: imageData };
+                        }
+                        return step;
+                    }));
+                }
+                
+                exportRecipes.push(exportRecipe);
+            }
+            
             const exportData = {
                 version: DATA_VERSION,
                 exportDate: new Date().toISOString(),
                 appConfig: appConfig,
                 folders: folders,
-                recipes: recipes,
+                recipes: exportRecipes,
                 stats: {
                     totalRecipes: recipes.length,
                     totalFolders: folders.length - 1,
@@ -1189,9 +1406,15 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 showToast('正在压缩图片...');
-                mainImageData = await compressImage(e.target.result);
-                updateMainImagePreview();
-                showToast('主图已选择并压缩');
+                try {
+                    const compressed = await compressImage(e.target.result);
+                    mainImageData = compressed;
+                    updateMainImagePreview();
+                    showToast('主图已选择并压缩');
+                } catch (err) {
+                    console.error('图片处理失败:', err);
+                    showToast('图片处理失败，请重试');
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -1214,7 +1437,7 @@
             }
         }
         
-        function viewMainImage() {
+        async function viewMainImage() {
             if (mainImageData) {
                 window.open(mainImageData, '_blank');
             }
@@ -1358,7 +1581,6 @@
                 </div>
             `).join('');
             
-            // 绑定事件
             if (!sortMode) {
                 currentFolders.forEach(f => {
                     const element = document.getElementById(`folder-${f.id}`);
@@ -1382,11 +1604,10 @@
             return subFolders + folderRecipes;
         }
         
-        function renderRecipes() {
+        async function renderRecipes() {
             const list = document.getElementById('recipeList');
             let currentRecipes = recipes.filter(r => r.folderId === currentFolderId).sort((a, b) => a.order - b.order);
             
-            // 应用搜索过滤
             if (searchKeyword) {
                 currentRecipes = currentRecipes.filter(r => {
                     const matchName = r.name.toLowerCase().includes(searchKeyword);
@@ -1409,12 +1630,35 @@
             
             emptyState.classList.add('hidden');
             
-            list.innerHTML = currentRecipes.map(r => {
+            const recipeHtml = await Promise.all(currentRecipes.map(async r => {
                 let thumbHtml = '';
+                
                 if (r.mainImage) {
-                    thumbHtml = `<img src="${r.mainImage}" class="recipe-thumb" alt="${r.name}">`;
+                    if (r.mainImage.startsWith('indexeddb://')) {
+                        const imageId = r.mainImage.replace('indexeddb://', '');
+                        const imageData = await ImageDB.getImage(imageId);
+                        if (imageData) {
+                            thumbHtml = `<img src="${imageData}" class="recipe-thumb" alt="${r.name}">`;
+                        } else {
+                            const emoji = getCategoryEmoji(r.category);
+                            thumbHtml = `<div class="recipe-thumb-placeholder">${emoji}</div>`;
+                        }
+                    } else {
+                        thumbHtml = `<img src="${r.mainImage}" class="recipe-thumb" alt="${r.name}">`;
+                    }
                 } else if (r.steps && r.steps[0] && r.steps[0].image) {
-                    thumbHtml = `<img src="${r.steps[0].image}" class="recipe-thumb" alt="${r.name}">`;
+                    if (r.steps[0].image.startsWith('indexeddb://')) {
+                        const imageId = r.steps[0].image.replace('indexeddb://', '');
+                        const imageData = await ImageDB.getImage(imageId);
+                        if (imageData) {
+                            thumbHtml = `<img src="${imageData}" class="recipe-thumb" alt="${r.name}">`;
+                        } else {
+                            const emoji = getCategoryEmoji(r.category);
+                            thumbHtml = `<div class="recipe-thumb-placeholder">${emoji}</div>`;
+                        }
+                    } else {
+                        thumbHtml = `<img src="${r.steps[0].image}" class="recipe-thumb" alt="${r.name}">`;
+                    }
                 } else {
                     const emoji = getCategoryEmoji(r.category);
                     thumbHtml = `<div class="recipe-thumb-placeholder">${emoji}</div>`;
@@ -1434,9 +1678,10 @@
                     </div>
                     <span class="folder-arrow">›</span>
                 </div>
-            `}).join('');
+            `}));
             
-            // 绑定事件
+            list.innerHTML = recipeHtml.join('');
+            
             if (!sortMode) {
                 currentRecipes.forEach(r => {
                     const element = document.getElementById(`recipe-${r.id}`);
@@ -1526,7 +1771,7 @@
             switchPage('page-trash');
         }
         
-        function renderTrash() {
+        async function renderTrash() {
             const list = document.getElementById('trashList');
             const emptyState = document.getElementById('trashEmpty');
             
@@ -1538,13 +1783,36 @@
             
             emptyState.classList.add('hidden');
             
-            list.innerHTML = trash.map(item => {
+            const trashHtml = await Promise.all(trash.map(async item => {
                 const daysLeft = getDaysLeft(item.deletedAt);
                 let thumbHtml = '';
+                
                 if (item.mainImage) {
-                    thumbHtml = `<img src="${item.mainImage}" class="trash-thumb" alt="${item.name}">`;
+                    if (item.mainImage.startsWith('indexeddb://')) {
+                        const imageId = item.mainImage.replace('indexeddb://', '');
+                        const imageData = await ImageDB.getImage('trash_' + imageId);
+                        if (imageData) {
+                            thumbHtml = `<img src="${imageData}" class="trash-thumb" alt="${item.name}">`;
+                        } else {
+                            const emoji = getCategoryEmoji(item.category);
+                            thumbHtml = `<div class="trash-thumb-placeholder">${emoji}</div>`;
+                        }
+                    } else {
+                        thumbHtml = `<img src="${item.mainImage}" class="trash-thumb" alt="${item.name}">`;
+                    }
                 } else if (item.steps && item.steps[0] && item.steps[0].image) {
-                    thumbHtml = `<img src="${item.steps[0].image}" class="trash-thumb" alt="${item.name}">`;
+                    if (item.steps[0].image.startsWith('indexeddb://')) {
+                        const imageId = item.steps[0].image.replace('indexeddb://', '');
+                        const imageData = await ImageDB.getImage('trash_' + imageId);
+                        if (imageData) {
+                            thumbHtml = `<img src="${imageData}" class="trash-thumb" alt="${item.name}">`;
+                        } else {
+                            const emoji = getCategoryEmoji(item.category);
+                            thumbHtml = `<div class="trash-thumb-placeholder">${emoji}</div>`;
+                        }
+                    } else {
+                        thumbHtml = `<img src="${item.steps[0].image}" class="trash-thumb" alt="${item.name}">`;
+                    }
                 } else {
                     const emoji = getCategoryEmoji(item.category);
                     thumbHtml = `<div class="trash-thumb-placeholder">${emoji}</div>`;
@@ -1566,20 +1834,22 @@
                         <button class="btn btn-danger" onclick="permanentlyDelete('${item.id}')">彻底删除</button>
                     </div>
                 </div>
-            `}).join('');
+            `}));
+            
+            list.innerHTML = trashHtml.join('');
         }
         
-        function restoreTrashItem(id) {
+        async function restoreTrashItem(id) {
             const item = trash.find(t => t.id === id);
             if (!item) return;
             
-            restoreFromTrash(item);
+            await restoreFromTrash(item);
             renderTrash();
             updateStats();
             showToast('菜谱已恢复');
         }
         
-        function permanentlyDelete(id) {
+        async function permanentlyDelete(id) {
             const item = trash.find(t => t.id === id);
             if (!item) return;
             
@@ -1587,7 +1857,7 @@
                 return;
             }
             
-            deleteFromTrashPermanently(item);
+            await deleteFromTrashPermanently(item);
             renderTrash();
             updateStats();
             showToast('已永久删除');
@@ -1607,7 +1877,6 @@
         function createFolder() {
             const name = document.getElementById('folderName').value.trim();
             
-            // 输入验证
             if (!name) {
                 showToast('请输入文件夹名称');
                 return;
@@ -1694,7 +1963,7 @@
             navigateTo('root');
         }
         
-        // ==================== 菜谱编辑 - 修复保存无反应问题 ====================
+        // ==================== 菜谱编辑 ====================
         function showEdit() {
             editingId = null;
             resetMainImage();
@@ -1713,7 +1982,6 @@
             switchPage('page-edit');
         }
         
-        // 添加调料（列表形式）
         function addSeasoning(data = null) {
             const container = document.getElementById('seasonings');
             const div = document.createElement('div');
@@ -1727,7 +1995,6 @@
             container.appendChild(div);
         }
         
-        // 添加食材（列表形式）
         function addIng(data = null) {
             const container = document.getElementById('ings');
             const div = document.createElement('div');
@@ -1788,110 +2055,148 @@
             reader.readAsDataURL(file);
         }
         
-        // 修复：重命名save函数为saveRecipe，避免与浏览器内置函数冲突
-        function saveRecipe() {
-            console.log('保存按钮被点击'); // 调试日志
-            
-            const name = document.getElementById('name').value.trim();
-            if (!name) {
-                showToast('请输入菜谱名称');
-                document.getElementById('name').focus();
-                return;
-            }
-            
-            // 收集调料
-            const seasonings = [];
-            document.querySelectorAll('#seasonings .ing-item').forEach(item => {
-                const nameInput = item.querySelector('.ing-name');
-                const amountInput = item.querySelector('.ing-amount');
-                const unitSelect = item.querySelector('.ing-unit');
-                
-                const nameVal = nameInput.value.trim();
-                const amountVal = amountInput.value.trim();
-                
-                if (nameVal) {
-                    seasonings.push({
-                        name: nameVal,
-                        amount: amountVal,
-                        unit: unitSelect.value
-                    });
-                }
-            });
-            
-            // 收集食材
-            const ingredients = [];
-            document.querySelectorAll('#ings .ing-item').forEach(item => {
-                const nameInput = item.querySelector('.ing-name');
-                const amountInput = item.querySelector('.ing-amount');
-                const unitSelect = item.querySelector('.ing-unit');
-                
-                const nameVal = nameInput.value.trim();
-                const amountVal = amountInput.value.trim();
-                
-                if (nameVal) {
-                    ingredients.push({
-                        name: nameVal,
-                        amount: amountVal,
-                        unit: unitSelect.value
-                    });
-                }
-            });
-            
-            const steps = [];
-            document.querySelectorAll('.step').forEach(step => {
-                const text = step.querySelector('.step-text').value.trim();
-                const img = step.querySelector('.step-img');
-                if (text || img.classList.contains('has-image')) {
-                    steps.push({
-                        text: text,
-                        image: img.classList.contains('has-image') ? img.src : null
-                    });
-                }
-            });
-            
-            const recipeData = {
-                name: name,
-                category: document.getElementById('category').value,
-                mainImage: mainImageData,
-                seasonings: seasonings,
-                ingredients: ingredients,
-                steps: steps,
-                folderId: currentFolderId,
-                updatedAt: new Date().toISOString()
-            };
-            
-            console.log('准备保存数据:', recipeData); // 调试日志
-            
-            if (editingId) {
-                const index = recipes.findIndex(r => r.id === editingId);
-                if (index !== -1) {
-                    recipeData.id = recipes[index].id;
-                    recipeData.createdAt = recipes[index].createdAt;
-                    recipeData.order = recipes[index].order;
-                    recipes[index] = recipeData;
-                    showToast('菜谱更新成功');
-                }
-            } else {
-                recipeData.id = 'recipe_' + Date.now();
-                recipeData.createdAt = new Date().toISOString();
-                recipeData.order = recipes.filter(r => r.folderId === currentFolderId).length;
-                recipes.push(recipeData);
-                showToast('菜谱创建成功');
-            }
+        // ==================== 保存菜谱（核心修复） ====================
+        async function saveRecipe() {
+            console.log('=== 开始保存菜谱 ===');
             
             try {
+                const name = document.getElementById('name').value.trim();
+                console.log('菜谱名称:', name);
+                
+                if (!name) {
+                    showToast('请输入菜谱名称');
+                    document.getElementById('name').focus();
+                    return;
+                }
+                
+                // 收集调料
+                const seasonings = [];
+                document.querySelectorAll('#seasonings .ing-item').forEach(item => {
+                    const nameInput = item.querySelector('.ing-name');
+                    const amountInput = item.querySelector('.ing-amount');
+                    const unitSelect = item.querySelector('.ing-unit');
+                    
+                    const nameVal = nameInput.value.trim();
+                    const amountVal = amountInput.value.trim();
+                    
+                    if (nameVal) {
+                        seasonings.push({
+                            name: nameVal,
+                            amount: amountVal,
+                            unit: unitSelect.value
+                        });
+                    }
+                });
+                console.log('调料数量:', seasonings.length);
+                
+                // 收集食材
+                const ingredients = [];
+                document.querySelectorAll('#ings .ing-item').forEach(item => {
+                    const nameInput = item.querySelector('.ing-name');
+                    const amountInput = item.querySelector('.ing-amount');
+                    const unitSelect = item.querySelector('.ing-unit');
+                    
+                    const nameVal = nameInput.value.trim();
+                    const amountVal = amountInput.value.trim();
+                    
+                    if (nameVal) {
+                        ingredients.push({
+                            name: nameVal,
+                            amount: amountVal,
+                            unit: unitSelect.value
+                        });
+                    }
+                });
+                console.log('食材数量:', ingredients.length);
+                
+                // 收集步骤
+                const steps = [];
+                document.querySelectorAll('.step').forEach(step => {
+                    const text = step.querySelector('.step-text').value.trim();
+                    const img = step.querySelector('.step-img');
+                    if (text || img.classList.contains('has-image')) {
+                        steps.push({
+                            text: text,
+                            image: img.classList.contains('has-image') ? img.src : null
+                        });
+                    }
+                });
+                console.log('步骤数量:', steps.length);
+                
+                // 处理主图 - 保存到IndexedDB
+                let mainImageRef = null;
+                if (mainImageData) {
+                    console.log('处理主图...');
+                    const imageId = editingId ? `img_${editingId}` : `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    await ImageDB.saveImage(imageId, mainImageData);
+                    mainImageRef = 'indexeddb://' + imageId;
+                    console.log('主图已保存到IndexedDB:', imageId);
+                }
+                
+                // 处理步骤图片 - 保存到IndexedDB
+                const processedSteps = await Promise.all(steps.map(async (step, index) => {
+                    if (step.image && step.image.startsWith('data:')) {
+                        const imageId = editingId 
+                            ? `step_${editingId}_${index}` 
+                            : `step_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`;
+                        await ImageDB.saveImage(imageId, step.image);
+                        return { ...step, image: 'indexeddb://' + imageId };
+                    }
+                    return step;
+                }));
+                
+                const recipeData = {
+                    name: name,
+                    category: document.getElementById('category').value,
+                    mainImage: mainImageRef,
+                    seasonings: seasonings,
+                    ingredients: ingredients,
+                    steps: processedSteps,
+                    folderId: currentFolderId,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                console.log('准备保存数据:', recipeData);
+                
+                if (editingId) {
+                    const index = recipes.findIndex(r => r.id === editingId);
+                    if (index !== -1) {
+                        // 删除旧图片
+                        const oldRecipe = recipes[index];
+                        if (oldRecipe.mainImage && oldRecipe.mainImage.startsWith('indexeddb://')) {
+                            const oldImageId = oldRecipe.mainImage.replace('indexeddb://', '');
+                            await ImageDB.deleteImage(oldImageId);
+                        }
+                        
+                        recipeData.id = recipes[index].id;
+                        recipeData.createdAt = recipes[index].createdAt;
+                        recipeData.order = recipes[index].order;
+                        recipes[index] = recipeData;
+                        showToast('菜谱更新成功');
+                    }
+                } else {
+                    recipeData.id = 'recipe_' + Date.now();
+                    recipeData.createdAt = new Date().toISOString();
+                    recipeData.order = recipes.filter(r => r.folderId === currentFolderId).length;
+                    recipes.push(recipeData);
+                    showToast('菜谱创建成功');
+                }
+                
+                // 保存到localStorage（现在只保存元数据，不保存大图片）
                 localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
-                console.log('保存成功'); // 调试日志
+                console.log('保存成功！');
+                
                 backToMain();
                 updateStats();
-            } catch (e) {
-                console.error('保存失败:', e);
-                showToast('保存失败：' + e.message);
+                
+            } catch (error) {
+                console.error('保存失败:', error);
+                showToast('保存失败: ' + error.message, true);
             }
         }
         
         // ==================== 菜谱查看 ====================
-        function viewRecipe(id) {
+        async function viewRecipe(id) {
             viewingId = id;
             const recipe = recipes.find(r => r.id === id);
             if (!recipe) return;
@@ -1900,15 +2205,23 @@
             
             let html = '<div class="card">';
             
+            // 显示主图
             if (recipe.mainImage) {
-                html += `<img src="${recipe.mainImage}" class="detail-img" onclick="window.open(this.src)" style="cursor:pointer">`;
+                let imageSrc = recipe.mainImage;
+                if (recipe.mainImage.startsWith('indexeddb://')) {
+                    const imageId = recipe.mainImage.replace('indexeddb://', '');
+                    imageSrc = await ImageDB.getImage(imageId) || '';
+                }
+                if (imageSrc) {
+                    html += `<img src="${imageSrc}" class="detail-img" onclick="window.open(this.src)" style="cursor:pointer">`;
+                }
             }
             
             if (recipe.category) {
                 html += `<div style="display:inline-block;background:#667eea;color:#fff;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:15px">${recipe.category}</div>`;
             }
             
-            // 调料列表显示
+            // 调料列表
             if (recipe.seasonings && recipe.seasonings.length > 0) {
                 html += `<div class="section-title">🧂 调料</div><div class="ing-list">`;
                 recipe.seasonings.forEach(s => {
@@ -1924,7 +2237,7 @@
                 html += '</div>';
             }
             
-            // 食材列表显示
+            // 食材列表
             if (recipe.ingredients && recipe.ingredients.length > 0) {
                 html += `<div class="section-title">🥘 食材</div><div class="ing-list">`;
                 recipe.ingredients.forEach(i => {
@@ -1940,19 +2253,27 @@
                 html += '</div>';
             }
             
+            // 步骤
             if (recipe.steps && recipe.steps.length > 0) {
                 html += `<div class="section-title">📝 烹饪步骤</div>`;
-                recipe.steps.forEach((step, idx) => {
+                for (const [idx, step] of recipe.steps.entries()) {
                     html += `<div class="step" style="background:#fff;border:2px solid #f0f0f0">`;
                     html += `<div class="step-header"><span class="step-num">${idx + 1}</span><div style="flex:1">`;
                     if (step.text) {
                         html += `<div style="line-height:1.6">${step.text.replace(/\n/g, '<br>')}</div>`;
                     }
                     if (step.image) {
-                        html += `<img src="${step.image}" style="width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-top:10px" onclick="window.open(this.src)">`;
+                        let imageSrc = step.image;
+                        if (step.image.startsWith('indexeddb://')) {
+                            const imageId = step.image.replace('indexeddb://', '');
+                            imageSrc = await ImageDB.getImage(imageId) || '';
+                        }
+                        if (imageSrc) {
+                            html += `<img src="${imageSrc}" style="width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-top:10px" onclick="window.open(this.src)">`;
+                        }
                     }
                     html += '</div></div></div>';
-                });
+                }
             }
             
             html += `<div style="margin-top:20px;padding-top:15px;border-top:2px solid #f0f0f0;color:#999;font-size:13px;text-align:center">`;
@@ -1966,12 +2287,23 @@
             switchPage('page-detail');
         }
         
-        function doEdit() {
+        async function doEdit() {
             const recipe = recipes.find(r => r.id === viewingId);
             if (!recipe) return;
             
             editingId = viewingId;
-            mainImageData = recipe.mainImage || null;
+            
+            // 加载主图
+            if (recipe.mainImage) {
+                if (recipe.mainImage.startsWith('indexeddb://')) {
+                    const imageId = recipe.mainImage.replace('indexeddb://', '');
+                    mainImageData = await ImageDB.getImage(imageId);
+                } else {
+                    mainImageData = recipe.mainImage;
+                }
+            } else {
+                mainImageData = null;
+            }
             updateMainImagePreview();
             
             document.getElementById('edit-title').textContent = '✏️ 编辑菜谱';
@@ -1995,7 +2327,14 @@
             }
             
             if (recipe.steps && recipe.steps.length > 0) {
-                recipe.steps.forEach(s => addStep(s));
+                for (const step of recipe.steps) {
+                    let stepData = { ...step };
+                    if (step.image && step.image.startsWith('indexeddb://')) {
+                        const imageId = step.image.replace('indexeddb://', '');
+                        stepData.image = await ImageDB.getImage(imageId) || '';
+                    }
+                    addStep(stepData);
+                }
             } else {
                 addStep();
             }
@@ -2003,7 +2342,7 @@
             switchPage('page-edit');
         }
         
-        function doDelete() {
+        async function doDelete() {
             const recipe = recipes.find(r => r.id === viewingId);
             if (!recipe) return;
             
@@ -2011,7 +2350,7 @@
                 return;
             }
             
-            moveToTrash(recipe);
+            await moveToTrash(recipe);
             recipes = recipes.filter(r => r.id !== viewingId);
             localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             backToMain();
@@ -2110,29 +2449,31 @@
             }
         }
         
-        function saveImage() {
+        async function saveImage() {
             const element = document.getElementById('detail-content');
             const recipe = recipes.find(r => r.id === viewingId);
             
             document.getElementById('loading').style.display = 'block';
             
-            html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false
-            }).then(canvas => {
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+                
                 const link = document.createElement('a');
                 link.download = `${recipe.name}_${new Date().toISOString().slice(0,10)}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
                 showToast('图片已保存');
-            }).catch(err => {
+            } catch (err) {
                 console.error('保存图片失败:', err);
                 showToast('保存失败，请重试');
-            }).finally(() => {
+            } finally {
                 document.getElementById('loading').style.display = 'none';
-            });
+            }
         }
         
         function handlePDFClick(e) {
@@ -2141,7 +2482,7 @@
             savePDF();
         }
         
-        function savePDF() {
+        async function savePDF() {
             if (isGeneratingPDF) {
                 console.log('PDF生成中，请稍候...');
                 return;
@@ -2156,70 +2497,70 @@
             const recipe = recipes.find(r => r.id === viewingId);
             const recipeName = recipe ? recipe.name : '菜谱';
             
-            setTimeout(() => {
-                html2canvas(element, {
+            try {
+                const canvas = await html2canvas(element, {
                     scale: 2,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
                     allowTaint: true
-                }).then(canvas => {
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF('p', 'mm', 'a4');
-                    
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-                    const margin = 10;
-                    
-                    const imgWidth = canvas.width;
-                    const imgHeight = canvas.height;
-                    const ratio = (pdfWidth - 2 * margin) / imgWidth;
-                    const scaledHeight = imgHeight * ratio;
-                    
-                    let heightLeft = scaledHeight;
-                    let position = margin;
-                    const availableHeight = pdfHeight - 2 * margin;
-                    
+                });
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+                
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const ratio = (pdfWidth - 2 * margin) / imgWidth;
+                const scaledHeight = imgHeight * ratio;
+                
+                let heightLeft = scaledHeight;
+                let position = margin;
+                const availableHeight = pdfHeight - 2 * margin;
+                
+                pdf.addImage(
+                    canvas.toDataURL('image/png', 1.0), 
+                    'PNG', 
+                    margin, 
+                    margin, 
+                    pdfWidth - 2 * margin, 
+                    scaledHeight
+                );
+                heightLeft -= availableHeight;
+                
+                while (heightLeft > 0) {
+                    position = margin - (scaledHeight - heightLeft - availableHeight);
+                    pdf.addPage();
                     pdf.addImage(
                         canvas.toDataURL('image/png', 1.0), 
                         'PNG', 
                         margin, 
-                        margin, 
+                        position, 
                         pdfWidth - 2 * margin, 
                         scaledHeight
                     );
                     heightLeft -= availableHeight;
-                    
-                    while (heightLeft > 0) {
-                        position = margin - (scaledHeight - heightLeft - availableHeight);
-                        pdf.addPage();
-                        pdf.addImage(
-                            canvas.toDataURL('image/png', 1.0), 
-                            'PNG', 
-                            margin, 
-                            position, 
-                            pdfWidth - 2 * margin, 
-                            scaledHeight
-                        );
-                        heightLeft -= availableHeight;
-                    }
-                    
-                    const timestamp = new Date().toISOString().slice(0,10);
-                    pdf.save(`${recipeName}_${timestamp}.pdf`);
-                    
-                    showToast('PDF已保存');
-                    
-                }).catch(err => {
-                    console.error('PDF生成失败:', err);
-                    showToast('PDF生成失败，请重试');
-                }).finally(() => {
-                    setTimeout(() => {
-                        isGeneratingPDF = false;
-                        loading.style.display = 'none';
-                        closeShare();
-                    }, 1000);
-                });
-            }, 100);
+                }
+                
+                const timestamp = new Date().toISOString().slice(0,10);
+                pdf.save(`${recipeName}_${timestamp}.pdf`);
+                
+                showToast('PDF已保存');
+                
+            } catch (err) {
+                console.error('PDF生成失败:', err);
+                showToast('PDF生成失败，请重试');
+            } finally {
+                setTimeout(() => {
+                    isGeneratingPDF = false;
+                    loading.style.display = 'none';
+                    closeShare();
+                }, 1000);
+            }
         }
         
         function downloadExcel() {
@@ -2279,14 +2620,15 @@
         }
         
         // ==================== 工具函数 ====================
-        function showToast(message) {
+        function showToast(message, isError = false) {
             const toast = document.createElement('div');
+            toast.className = isError ? 'error-toast' : 'success-toast';
             toast.style.cssText = `
                 position: fixed;
                 bottom: 100px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(0,0,0,0.8);
+                background: ${isError ? '#ff6b6b' : 'rgba(0,0,0,0.8)'};
                 color: #fff;
                 padding: 14px 28px;
                 border-radius: 30px;
@@ -2294,6 +2636,9 @@
                 z-index: 3000;
                 animation: fadeIn 0.3s ease;
                 font-weight: 500;
+                max-width: 80%;
+                text-align: center;
+                line-height: 1.5;
             `;
             toast.textContent = message;
             document.body.appendChild(toast);
@@ -2306,7 +2651,7 @@
                         document.body.removeChild(toast);
                     }
                 }, 300);
-            }, 2500);
+            }, 3000);
         }
         
         document.addEventListener('keydown', (e) => {
