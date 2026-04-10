@@ -10,7 +10,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- SheetJS for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -41,10 +40,26 @@
         .input{width:100%;padding:14px;border:2px solid #e8e8e8;border-radius:12px;font-size:16px;margin-bottom:12px;transition:all 0.3s;background:#fafafa}
         .input:focus{outline:none;border-color:#667eea;background:#fff;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
         select.input{background:#fff;cursor:pointer}
-        .recipe{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#f8f9fa;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;border:2px solid transparent;overflow:hidden}
+        
+        /* 列表样式优化 */
+        .recipe{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#f8f9fa;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;border:2px solid transparent;overflow:hidden;user-select:none;-webkit-user-select:none}
         .recipe:hover{background:#e8eaf6;border-color:#667eea;transform:translateX(5px)}
+        .recipe:active{background:#dde5ff;transform:scale(0.98)}
         .recipe.dragging{opacity:0.5;background:#e3f2fd}
-        .recipe-handle{cursor:move;padding:8px;color:#999;margin-right:10px;font-size:20px}
+        .recipe.long-pressing{background:#667eea;color:#fff;transform:scale(0.98)}
+        .recipe.long-pressing .recipe-title{color:#fff}
+        .recipe.long-pressing .recipe-meta{color:#e0e0e0}
+        
+        .folder-item{display:flex;align-items:center;padding:18px;background:#fff;border-radius:14px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.3s;border:2px solid transparent;user-select:none;-webkit-user-select:none}
+        .folder-item:hover{transform:translateX(8px);box-shadow:0 8px 20px rgba(0,0,0,0.12);border-color:#667eea}
+        .folder-item:active{background:#f0f4ff;transform:scale(0.98)}
+        .folder-item.long-pressing{background:#667eea;transform:scale(0.98)}
+        .folder-item.long-pressing .folder-name{color:#fff}
+        .folder-item.long-pressing .folder-count{color:#e0e0e0;background:rgba(255,255,255,0.2)}
+        .folder-item.long-pressing .folder-arrow{color:#fff}
+        
+        .recipe-handle{cursor:move;padding:8px;color:#999;margin-right:10px;font-size:20px;display:none}
+        .sort-mode .recipe-handle{display:block}
         .recipe-info{flex:1;min-width:0}
         .recipe-title{font-weight:600;color:#333;font-size:16px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .recipe-meta{color:#888;font-size:13px}
@@ -62,6 +77,17 @@
         .step-num{display:inline-flex;align-items:center;justify-content:center;background:#667eea;color:#fff;width:32px;height:32px;border-radius:50%;text-align:center;font-weight:bold;margin-right:12px;font-size:14px;flex-shrink:0}
         .step-content{flex:1}
         .step-text{width:100%;min-height:60px;margin-bottom:10px}
+        
+        /* 调料食材列表样式 */
+        .ing-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+        .ing-item{display:flex;align-items:center;padding:12px 16px;background:#fff;border-radius:10px;border:1px solid #e8e8e8;transition:all 0.2s}
+        .ing-item:hover{border-color:#667eea;transform:translateX(4px);box-shadow:0 2px 8px rgba(102,126,234,0.1)}
+        .ing-name{flex:2;font-weight:500;color:#333;font-size:15px}
+        .ing-amount{flex:1;text-align:center;color:#667eea;font-weight:600;font-size:15px}
+        .ing-unit{flex:1;text-align:right;color:#888;font-size:14px}
+        .ing-delete{width:32px;height:32px;border-radius:50%;background:#ff6b6b;color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;margin-left:12px;transition:all 0.3s}
+        .ing-delete:hover{background:#ff5252;transform:scale(1.1)}
+        
         .ing-row,.seasoning-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:12px;align-items:center}
         .flex{display:flex;gap:12px;flex-wrap:wrap}
         .flex .btn{flex:1;min-width:120px}
@@ -87,8 +113,7 @@
         .close-btn{width:100%;padding:14px;background:#f0f0f0;border:none;border-radius:12px;font-size:16px;cursor:pointer;transition:all 0.3s;font-weight:500;color:#666}
         .close-btn:hover{background:#e0e0e0}
         .loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:24px 48px;border-radius:16px;display:none;z-index:2000;font-size:16px;font-weight:500;backdrop-filter:blur(10px)}
-        .folder-item{display:flex;align-items:center;padding:18px;background:#fff;border-radius:14px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.3s;border:2px solid transparent}
-        .folder-item:hover{transform:translateX(8px);box-shadow:0 8px 20px rgba(0,0,0,0.12);border-color:#667eea}
+        
         .folder-icon{font-size:28px;margin-right:14px}
         .folder-name{flex:1;font-weight:600;color:#333;font-size:16px}
         .folder-count{color:#999;font-size:13px;background:#f0f0f0;padding:4px 10px;border-radius:12px}
@@ -171,6 +196,13 @@
         .file-drop-zone .text{color:#667eea;font-size:14px;font-weight:500}
         .file-drop-zone .hint{color:#888;font-size:12px;margin-top:8px}
         
+        /* 长按菜单样式 */
+        .long-press-menu{position:fixed;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.3);padding:16px;z-index:3000;min-width:200px;animation:fadeIn 0.2s ease}
+        .long-press-menu-item{padding:14px 18px;border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:15px;display:flex;align-items:center;gap:12px}
+        .long-press-menu-item:hover{background:#f0f4ff;color:#667eea}
+        .long-press-menu-item.delete:hover{background:#fff5f5;color:#ff6b6b}
+        .long-press-menu-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:2999;backdrop-filter:blur(2px)}
+        
         @media(max-width:480px){
             .ing-row,.seasoning-row{grid-template-columns:1fr 1fr;gap:8px}
             .ing-row input:first-child,.seasoning-row input:first-child{grid-column:1/-1}
@@ -181,6 +213,8 @@
             .recipe-thumb,.recipe-thumb-placeholder,.trash-thumb,.trash-thumb-placeholder{width:50px;height:50px}
             .trash-actions .btn{padding:6px 12px;font-size:12px}
             .import-export-grid{grid-template-columns:1fr}
+            .ing-item{flex-wrap:wrap}
+            .ing-amount,.ing-unit{flex:1;text-align:left}
         }
     </style>
 </head>
@@ -261,11 +295,11 @@
         
         <div class="card">
             <div class="section-title">🧂 调料</div>
-            <div id="seasonings"></div>
+            <div class="ing-list" id="seasonings"></div>
             <button class="btn btn-secondary" onclick="addSeasoning()">+ 添加调料</button>
             
             <div class="section-title">🥘 食材</div>
-            <div id="ings"></div>
+            <div class="ing-list" id="ings"></div>
             <button class="btn btn-secondary" onclick="addIng()">+ 添加食材</button>
         </div>
         
@@ -479,16 +513,17 @@
         </div>
     </div>
 
-    <!-- 文件夹菜单弹窗 -->
-    <div id="folderMenuModal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title">📁 文件夹操作</h3>
-            <div style="text-align:left;display:flex;flex-direction:column;gap:10px">
-                <button class="btn btn-secondary" onclick="enterFolder()" style="text-align:left;padding-left:20px">📂 打开文件夹</button>
-                <button class="btn btn-secondary" onclick="renameFolder()" style="text-align:left;padding-left:20px">✏️ 重命名</button>
-                <button class="btn btn-danger" onclick="deleteFolder()" style="text-align:left;padding-left:20px">🗑️ 删除文件夹</button>
-            </div>
-            <button class="close-btn" onclick="closeFolderMenu()" style="margin-top:20px">取消</button>
+    <!-- 长按菜单（动态创建） -->
+    <div id="longPressMenuOverlay" class="long-press-menu-overlay hidden" onclick="closeLongPressMenu()"></div>
+    <div id="longPressMenu" class="long-press-menu hidden">
+        <div class="long-press-menu-item" onclick="handleLongPressAction('open')">
+            <span>📂</span> 打开
+        </div>
+        <div class="long-press-menu-item" onclick="handleLongPressAction('rename')">
+            <span>✏️</span> 重命名
+        </div>
+        <div class="long-press-menu-item delete" onclick="handleLongPressAction('delete')">
+            <span>🗑️</span> 删除
         </div>
     </div>
 
@@ -497,7 +532,7 @@
 
     <script>
         // ==================== 数据版本管理 ====================
-        const DATA_VERSION = '2.1';
+        const DATA_VERSION = '2.2';
         const STORAGE_KEYS = {
             VERSION: 'appDataVersion',
             CONFIG: 'appConfig',
@@ -546,6 +581,7 @@
         const DEFAULT_CATEGORIES = ['饭类','粉类','小食','主菜','冷食','汤品','甜点','饮品'];
         const DEFAULT_UNITS = ['克','毫升','个','只','勺','茶匙','汤匙','斤','两','把','块','片','根','条','瓣','适量','少许','杯','碗','袋','包','瓶','支'];
         const TRASH_RETENTION_DAYS = 30;
+        const LONG_PRESS_DURATION = 600; // 长按触发时间（毫秒）
         const CREATOR_NAME = 'Chef KtZ';
         
         // ==================== 状态管理 ====================
@@ -562,6 +598,7 @@
         
         let currentFolderId = 'root';
         let selectedFolderId = null;
+        let selectedRecipeId = null;
         let viewingId = null;
         let editingId = null;
         let sortMode = false;
@@ -569,6 +606,11 @@
         let draggedItem = null;
         let mainImageData = null;
         let isGeneratingPDF = false;
+        
+        // 长按相关状态
+        let longPressTimer = null;
+        let longPressTarget = null;
+        let isLongPressTriggered = false;
         
         // ==================== 回收站管理 ====================
         function cleanTrash() {
@@ -647,6 +689,145 @@
             renderTrash();
             updateStats();
             showToast('回收站已清空');
+        }
+        
+        // ==================== 长按菜单功能 ====================
+        function initLongPress(element, type, id) {
+            const startHandler = (e) => {
+                if (sortMode) return; // 排序模式下禁用长按菜单
+                
+                isLongPressTriggered = false;
+                longPressTarget = { type, id, element };
+                
+                // 添加长按视觉反馈
+                element.classList.add('long-pressing');
+                
+                longPressTimer = setTimeout(() => {
+                    isLongPressTriggered = true;
+                    element.classList.remove('long-pressing');
+                    showLongPressMenu(e, type, id);
+                }, LONG_PRESS_DURATION);
+            };
+            
+            const endHandler = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                element.classList.remove('long-pressing');
+                
+                // 如果不是长按触发，则执行点击操作
+                if (!isLongPressTriggered && longPressTarget) {
+                    if (type === 'folder') {
+                        navigateTo(id);
+                    } else if (type === 'recipe') {
+                        viewRecipe(id);
+                    }
+                }
+                longPressTarget = null;
+            };
+            
+            const cancelHandler = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                element.classList.remove('long-pressing');
+                longPressTarget = null;
+            };
+            
+            // 鼠标事件
+            element.addEventListener('mousedown', startHandler);
+            element.addEventListener('mouseup', endHandler);
+            element.addEventListener('mouseleave', cancelHandler);
+            
+            // 触摸事件
+            element.addEventListener('touchstart', (e) => {
+                startHandler(e.touches[0]);
+            }, { passive: true });
+            element.addEventListener('touchend', endHandler);
+            element.addEventListener('touchcancel', cancelHandler);
+            
+            // 防止上下文菜单
+            element.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                return false;
+            });
+        }
+        
+        function showLongPressMenu(e, type, id) {
+            selectedFolderId = type === 'folder' ? id : null;
+            selectedRecipeId = type === 'recipe' ? id : null;
+            
+            const menu = document.getElementById('longPressMenu');
+            const overlay = document.getElementById('longPressMenuOverlay');
+            
+            // 设置菜单位置
+            const x = e.clientX || (e.touches && e.touches[0].clientX) || window.innerWidth / 2;
+            const y = e.clientY || (e.touches && e.touches[0].clientY) || window.innerHeight / 2;
+            
+            menu.style.left = Math.min(x - 100, window.innerWidth - 220) + 'px';
+            menu.style.top = Math.min(y - 50, window.innerHeight - 200) + 'px';
+            
+            // 更新菜单项
+            const openItem = menu.querySelector('.long-press-menu-item:nth-child(1)');
+            const renameItem = menu.querySelector('.long-press-menu-item:nth-child(2)');
+            const deleteItem = menu.querySelector('.long-press-menu-item:nth-child(3)');
+            
+            if (type === 'folder') {
+                openItem.innerHTML = '<span>📂</span> 打开';
+                renameItem.innerHTML = '<span>✏️</span> 重命名';
+                deleteItem.innerHTML = '<span>🗑️</span> 删除';
+            } else {
+                openItem.innerHTML = '<span>👁️</span> 查看';
+                renameItem.innerHTML = '<span>✏️</span> 编辑';
+                deleteItem.innerHTML = '<span>🗑️</span> 删除';
+            }
+            
+            menu.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        function closeLongPressMenu() {
+            document.getElementById('longPressMenu').classList.add('hidden');
+            document.getElementById('longPressMenuOverlay').classList.add('hidden');
+        }
+        
+        function handleLongPressAction(action) {
+            closeLongPressMenu();
+            
+            if (selectedFolderId) {
+                // 文件夹操作
+                switch(action) {
+                    case 'open':
+                        navigateTo(selectedFolderId);
+                        break;
+                    case 'rename':
+                        renameFolder();
+                        break;
+                    case 'delete':
+                        deleteFolder();
+                        break;
+                }
+            } else if (selectedRecipeId) {
+                // 菜谱操作
+                switch(action) {
+                    case 'open':
+                        viewRecipe(selectedRecipeId);
+                        break;
+                    case 'rename':
+                        viewingId = selectedRecipeId;
+                        doEdit();
+                        break;
+                    case 'delete':
+                        viewingId = selectedRecipeId;
+                        doDelete();
+                        break;
+                }
+            }
+            
+            selectedFolderId = null;
+            selectedRecipeId = null;
         }
         
         // ==================== 初始化 ====================
@@ -754,20 +935,16 @@
             let importedCount = 0;
             let skippedCount = 0;
             
-            // 导入菜谱
             data.recipes.forEach(importedRecipe => {
-                // 检查是否已存在（根据名称和创建时间判断）
                 const exists = recipes.some(r => 
                     r.name === importedRecipe.name && 
                     r.createdAt === importedRecipe.createdAt
                 );
                 
                 if (!exists) {
-                    // 生成新ID避免冲突
                     importedRecipe.id = 'recipe_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     importedRecipe.importedAt = new Date().toISOString();
                     
-                    // 确保文件夹存在
                     if (importedRecipe.folderId && importedRecipe.folderId !== 'root') {
                         const folderExists = folders.some(f => f.id === importedRecipe.folderId);
                         if (!folderExists) {
@@ -782,7 +959,6 @@
                 }
             });
             
-            // 导入文件夹（如果不存在）
             if (data.folders && Array.isArray(data.folders)) {
                 data.folders.forEach(importedFolder => {
                     if (importedFolder.id !== 'root') {
@@ -794,11 +970,9 @@
                 });
             }
             
-            // 保存数据
             localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
             localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
             
-            // 更新分类
             if (data.appConfig && data.appConfig.categories) {
                 const newCategories = data.appConfig.categories.filter(c => !appConfig.categories.includes(c));
                 if (newCategories.length > 0) {
@@ -846,7 +1020,6 @@
         }
         
         function exportExcel() {
-            // 准备数据
             const excelData = recipes.map((recipe, index) => {
                 const seasoningsStr = recipe.seasonings ? 
                     recipe.seasonings.map(s => `${s.name} ${s.amount}${s.unit}`).join('、') : '';
@@ -867,11 +1040,9 @@
                 };
             });
             
-            // 创建工作簿
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(excelData);
             
-            // 设置列宽
             const colWidths = [
                 { wch: 6 },   // 序号
                 { wch: 20 },  // 菜谱名称
@@ -886,50 +1057,9 @@
             
             XLSX.utils.book_append_sheet(wb, ws, '菜谱列表');
             
-            // 下载
             XLSX.writeFile(wb, `菜谱清单_${new Date().toISOString().slice(0,10)}.xlsx`);
             
             closeExportModal();
-            showToast('Excel文件已下载');
-        }
-        
-        function downloadExcel() {
-            // 单个菜谱导出为Excel
-            const recipe = recipes.find(r => r.id === viewingId);
-            if (!recipe) return;
-            
-            const seasoningsStr = recipe.seasonings ? 
-                recipe.seasonings.map(s => `${s.name} ${s.amount}${s.unit}`).join('、') : '';
-            const ingredientsStr = recipe.ingredients ? 
-                recipe.ingredients.map(i => `${i.name} ${i.amount}${i.unit}`).join('、') : '';
-            const stepsStr = recipe.steps ? 
-                recipe.steps.map((step, idx) => `${idx + 1}. ${step.text}`).join('\n') : '';
-            
-            const excelData = [{
-                '菜谱名称': recipe.name,
-                '分类': recipe.category || '未分类',
-                '调料': seasoningsStr,
-                '食材': ingredientsStr,
-                '步骤': stepsStr,
-                '创建时间': new Date(recipe.createdAt).toLocaleString()
-            }];
-            
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            
-            ws['!cols'] = [
-                { wch: 20 },  // 菜谱名称
-                { wch: 12 },  // 分类
-                { wch: 40 },  // 调料
-                { wch: 40 },  // 食材
-                { wch: 60 },  // 步骤
-                { wch: 20 }   // 创建时间
-            ];
-            
-            XLSX.utils.book_append_sheet(wb, ws, recipe.name);
-            XLSX.writeFile(wb, `${recipe.name}_${new Date().toISOString().slice(0,10)}.xlsx`);
-            
-            closeShare();
             showToast('Excel文件已下载');
         }
         
@@ -1127,9 +1257,10 @@
             }
             
             list.innerHTML = currentFolders.map(f => `
-                <div class="folder-item" 
-                     ${sortMode ? 'draggable="true"' : `onclick="openFolderMenu('${f.id}')"`}
-                     data-id="${f.id}">
+                <div class="folder-item ${sortMode ? 'sort-mode' : ''}" 
+                     ${sortMode ? 'draggable="true"' : ''}
+                     data-id="${f.id}"
+                     id="folder-${f.id}">
                     ${sortMode ? '<span class="recipe-handle">⋮⋮</span>' : ''}
                     <span class="folder-icon">📁</span>
                     <span class="folder-name">${f.name}</span>
@@ -1138,7 +1269,15 @@
                 </div>
             `).join('');
             
-            if (sortMode) {
+            // 绑定事件
+            if (!sortMode) {
+                currentFolders.forEach(f => {
+                    const element = document.getElementById(`folder-${f.id}`);
+                    if (element) {
+                        initLongPress(element, 'folder', f.id);
+                    }
+                });
+            } else {
                 list.querySelectorAll('.folder-item').forEach(item => {
                     item.addEventListener('dragstart', handleDragStart);
                     item.addEventListener('dragover', handleDragOver);
@@ -1179,10 +1318,11 @@
                 }
                 
                 return `
-                <div class="recipe" 
-                     ${sortMode ? 'draggable="true"' : `onclick="viewRecipe('${r.id}')"`}
+                <div class="recipe ${sortMode ? 'sort-mode' : ''}" 
+                     ${sortMode ? 'draggable="true"' : ''}
                      data-id="${r.id}"
-                     data-type="recipe">
+                     data-type="recipe"
+                     id="recipe-${r.id}">
                     ${sortMode ? '<span class="recipe-handle">⋮⋮</span>' : ''}
                     ${thumbHtml}
                     <div class="recipe-info">
@@ -1193,7 +1333,15 @@
                 </div>
             `}).join('');
             
-            if (sortMode) {
+            // 绑定事件
+            if (!sortMode) {
+                currentRecipes.forEach(r => {
+                    const element = document.getElementById(`recipe-${r.id}`);
+                    if (element) {
+                        initLongPress(element, 'recipe', r.id);
+                    }
+                });
+            } else {
                 list.querySelectorAll('.recipe').forEach(item => {
                     item.addEventListener('dragstart', handleDragStart);
                     item.addEventListener('dragover', handleDragOver);
@@ -1375,32 +1523,6 @@
             showToast('文件夹创建成功');
         }
         
-        function openFolderMenu(folderId) {
-            selectedFolderId = folderId;
-            document.getElementById('folderMenuModal').classList.add('active');
-        }
-        
-        function closeFolderMenu() {
-            document.getElementById('folderMenuModal').classList.remove('active');
-            selectedFolderId = null;
-        }
-        
-        function enterFolder() {
-            if (selectedFolderId) {
-                navigateTo(selectedFolderId);
-                closeFolderMenu();
-            }
-        }
-        
-        function navigateTo(folderId) {
-            currentFolderId = folderId;
-            renderMain();
-        }
-        
-        function goHome() {
-            navigateTo('root');
-        }
-        
         function renameFolder() {
             const folder = folders.find(f => f.id === selectedFolderId);
             if (!folder) return;
@@ -1412,7 +1534,6 @@
                 renderMain();
                 showToast('重命名成功');
             }
-            closeFolderMenu();
         }
         
         function deleteFolder() {
@@ -1422,14 +1543,12 @@
             const count = getFolderCount(folder.id);
             if (count > 0) {
                 if (!confirm(`该文件夹包含 ${count} 个项目，确定要删除吗？\n（内部项目将移动到根目录）`)) {
-                    closeFolderMenu();
                     return;
                 }
                 folders.filter(f => f.parentId === folder.id).forEach(f => f.parentId = 'root');
                 recipes.filter(r => r.folderId === folder.id).forEach(r => r.folderId = 'root');
             } else {
                 if (!confirm('确定要删除这个空文件夹吗？')) {
-                    closeFolderMenu();
                     return;
                 }
             }
@@ -1440,7 +1559,15 @@
             renderMain();
             updateStats();
             showToast('文件夹已删除');
-            closeFolderMenu();
+        }
+        
+        function navigateTo(folderId) {
+            currentFolderId = folderId;
+            renderMain();
+        }
+        
+        function goHome() {
+            navigateTo('root');
         }
         
         // ==================== 菜谱编辑 ====================
@@ -1462,28 +1589,32 @@
             switchPage('page-edit');
         }
         
+        // 添加调料（列表形式）
         function addSeasoning(data = null) {
+            const container = document.getElementById('seasonings');
             const div = document.createElement('div');
-            div.className = 'seasoning-row';
+            div.className = 'ing-item';
             div.innerHTML = `
-                <input type="text" class="input" placeholder="调料名称" value="${data ? data.name : ''}">
-                <input type="text" class="input" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}">
-                <select class="input">${getUnitOptions(data ? data.unit : '')}</select>
-                <button class="delete-btn" onclick="this.parentElement.remove()">×</button>
+                <input type="text" class="input ing-name" placeholder="调料名称" value="${data ? data.name : ''}" style="margin:0;background:transparent;border:none;padding:0">
+                <input type="text" class="input ing-amount" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}" style="margin:0;background:transparent;border:none;padding:0;text-align:center">
+                <select class="input ing-unit" style="margin:0;background:transparent;border:none;padding:0;text-align:right">${getUnitOptions(data ? data.unit : '')}</select>
+                <button class="ing-delete" onclick="this.parentElement.remove()">×</button>
             `;
-            document.getElementById('seasonings').appendChild(div);
+            container.appendChild(div);
         }
         
+        // 添加食材（列表形式）
         function addIng(data = null) {
+            const container = document.getElementById('ings');
             const div = document.createElement('div');
-            div.className = 'ing-row';
+            div.className = 'ing-item';
             div.innerHTML = `
-                <input type="text" class="input" placeholder="食材名称" value="${data ? data.name : ''}">
-                <input type="text" class="input" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}">
-                <select class="input">${getUnitOptions(data ? data.unit : '')}</select>
-                <button class="delete-btn" onclick="this.parentElement.remove()">×</button>
+                <input type="text" class="input ing-name" placeholder="食材名称" value="${data ? data.name : ''}" style="margin:0;background:transparent;border:none;padding:0">
+                <input type="text" class="input ing-amount" placeholder="用量" value="${data && data.amount !== undefined ? data.amount : ''}" style="margin:0;background:transparent;border:none;padding:0;text-align:center">
+                <select class="input ing-unit" style="margin:0;background:transparent;border:none;padding:0;text-align:right">${getUnitOptions(data ? data.unit : '')}</select>
+                <button class="ing-delete" onclick="this.parentElement.remove()">×</button>
             `;
-            document.getElementById('ings').appendChild(div);
+            container.appendChild(div);
         }
         
         function addStep(data = null) {
@@ -1541,30 +1672,40 @@
                 return;
             }
             
+            // 收集调料（从列表形式）
             const seasonings = [];
-            document.querySelectorAll('.seasoning-row').forEach(row => {
-                const inputs = row.querySelectorAll('input, select');
-                const nameVal = inputs[0].value.trim();
-                const amountVal = inputs[1].value.trim();
+            document.querySelectorAll('#seasonings .ing-item').forEach(item => {
+                const nameInput = item.querySelector('.ing-name');
+                const amountInput = item.querySelector('.ing-amount');
+                const unitSelect = item.querySelector('.ing-unit');
+                
+                const nameVal = nameInput.value.trim();
+                const amountVal = amountInput.value.trim();
+                
                 if (nameVal) {
                     seasonings.push({
                         name: nameVal,
-                        amount: amountVal,
-                        unit: inputs[2].value
+                        amount: amountVal, // 空白保持空白
+                        unit: unitSelect.value
                     });
                 }
             });
             
+            // 收集食材（从列表形式）
             const ingredients = [];
-            document.querySelectorAll('.ing-row').forEach(row => {
-                const inputs = row.querySelectorAll('input, select');
-                const nameVal = inputs[0].value.trim();
-                const amountVal = inputs[1].value.trim();
+            document.querySelectorAll('#ings .ing-item').forEach(item => {
+                const nameInput = item.querySelector('.ing-name');
+                const amountInput = item.querySelector('.ing-amount');
+                const unitSelect = item.querySelector('.ing-unit');
+                
+                const nameVal = nameInput.value.trim();
+                const amountVal = amountInput.value.trim();
+                
                 if (nameVal) {
                     ingredients.push({
                         name: nameVal,
-                        amount: amountVal,
-                        unit: inputs[2].value
+                        amount: amountVal, // 空白保持空白
+                        unit: unitSelect.value
                     });
                 }
             });
@@ -1632,20 +1773,34 @@
                 html += `<div style="display:inline-block;background:#667eea;color:#fff;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:15px">${recipe.category}</div>`;
             }
             
+            // 调料列表显示
             if (recipe.seasonings && recipe.seasonings.length > 0) {
-                html += `<div class="section-title">🧂 调料</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
+                html += `<div class="section-title">🧂 调料</div><div class="ing-list">`;
                 recipe.seasonings.forEach(s => {
                     const amount = s.amount || '';
-                    html += `<span style="background:#fff3e0;padding:8px 14px;border-radius:20px;font-size:14px">${s.name} ${amount}${s.unit}</span>`;
+                    html += `
+                        <div class="ing-item">
+                            <span class="ing-name">${s.name}</span>
+                            <span class="ing-amount">${amount}</span>
+                            <span class="ing-unit">${s.unit}</span>
+                        </div>
+                    `;
                 });
                 html += '</div>';
             }
             
+            // 食材列表显示
             if (recipe.ingredients && recipe.ingredients.length > 0) {
-                html += `<div class="section-title">🥘 食材</div><div style="display:flex;flex-wrap:wrap;gap:8px">`;
+                html += `<div class="section-title">🥘 食材</div><div class="ing-list">`;
                 recipe.ingredients.forEach(i => {
                     const amount = i.amount || '';
-                    html += `<span style="background:#e8f5e9;padding:8px 14px;border-radius:20px;font-size:14px">${i.name} ${amount}${i.unit}</span>`;
+                    html += `
+                        <div class="ing-item">
+                            <span class="ing-name">${i.name}</span>
+                            <span class="ing-amount">${amount}</span>
+                            <span class="ing-unit">${i.unit}</span>
+                        </div>
+                    `;
                 });
                 html += '</div>';
             }
@@ -1932,6 +2087,45 @@
             }, 100);
         }
         
+        function downloadExcel() {
+            const recipe = recipes.find(r => r.id === viewingId);
+            if (!recipe) return;
+            
+            const seasoningsStr = recipe.seasonings ? 
+                recipe.seasonings.map(s => `${s.name} ${s.amount}${s.unit}`).join('、') : '';
+            const ingredientsStr = recipe.ingredients ? 
+                recipe.ingredients.map(i => `${i.name} ${i.amount}${i.unit}`).join('、') : '';
+            const stepsStr = recipe.steps ? 
+                recipe.steps.map((step, idx) => `${idx + 1}. ${step.text}`).join('\n') : '';
+            
+            const excelData = [{
+                '菜谱名称': recipe.name,
+                '分类': recipe.category || '未分类',
+                '调料': seasoningsStr,
+                '食材': ingredientsStr,
+                '步骤': stepsStr,
+                '创建时间': new Date(recipe.createdAt).toLocaleString()
+            }];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            ws['!cols'] = [
+                { wch: 20 },  // 菜谱名称
+                { wch: 12 },  // 分类
+                { wch: 40 },  // 调料
+                { wch: 40 },  // 食材
+                { wch: 60 },  // 步骤
+                { wch: 20 }   // 创建时间
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, recipe.name);
+            XLSX.writeFile(wb, `${recipe.name}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            closeShare();
+            showToast('Excel文件已下载');
+        }
+        
         // ==================== 页面切换 ====================
         function switchPage(pageId) {
             document.querySelectorAll('[id^="page-"]').forEach(el => {
@@ -1981,6 +2175,7 @@
                 document.querySelectorAll('.modal.active').forEach(modal => {
                     modal.classList.remove('active');
                 });
+                closeLongPressMenu();
             }
         });
     </script>
