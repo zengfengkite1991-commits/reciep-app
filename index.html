@@ -7,87 +7,147 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:#333}
-        .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-        h1{color:#667eea;font-size:22px}
-        h3{margin-bottom:10px;color:#333}
-        .btn{background:#667eea;color:#fff;border:none;padding:12px 24px;border-radius:25px;font-size:16px;cursor:pointer;margin:5px 0;width:100%}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;padding-bottom:80px;color:#333;line-height:1.6}
+        .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:15px;box-shadow:0 4px 20px rgba(0,0,0,0.1);animation:fadeIn 0.3s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        h1{color:#667eea;font-size:24px;margin-bottom:10px}
+        h2{color:#667eea;font-size:20px;margin-bottom:15px}
+        h3{margin-bottom:12px;color:#333;font-size:18px}
+        .btn{background:#667eea;color:#fff;border:none;padding:14px 24px;border-radius:25px;font-size:16px;cursor:pointer;margin:5px 0;width:100%;transition:all 0.3s;font-weight:500}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,0.4)}
         .btn:active{transform:scale(0.95)}
-        .btn-small{width:auto;padding:6px 12px;font-size:12px}
+        .btn-small{width:auto;padding:8px 16px;font-size:13px}
         .btn-secondary{background:#f0f0f0;color:#333}
+        .btn-secondary:hover{background:#e0e0f0;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
         .btn-danger{background:#ff6b6b}
+        .btn-danger:hover{background:#ff5252;box-shadow:0 4px 12px rgba(255,107,107,0.4)}
         .btn-success{background:#52c41a}
+        .btn-success:hover{background:#4caf50;box-shadow:0 4px 12px rgba(82,196,26,0.4)}
         .btn-warning{background:#faad14}
+        .btn-warning:hover{background:#ffc107;box-shadow:0 4px 12px rgba(250,173,20,0.4)}
         .btn-info{background:#1890ff}
-        .input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;margin-bottom:0}
-        .input:focus{outline:none;border-color:#667eea}
-        select.input{background:#fff}
-        .recipe{display:flex;justify-content:space-between;align-items:center;padding:15px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
-        .recipe:hover{background:#e8e8e8}
-        .recipe.dragging{opacity:0.5}
-        .recipe-handle{cursor:move;padding:5px;color:#999;margin-right:10px}
+        .btn-info:hover{background:#2196f3;box-shadow:0 4px 12px rgba(24,144,255,0.4)}
+        .input{width:100%;padding:14px;border:2px solid #e8e8e8;border-radius:12px;font-size:16px;margin-bottom:12px;transition:all 0.3s;background:#fafafa}
+        .input:focus{outline:none;border-color:#667eea;background:#fff;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+        select.input{background:#fff;cursor:pointer}
+        .recipe{display:flex;justify-content:space-between;align-items:center;padding:16px;background:#f8f9fa;border-radius:12px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;border:2px solid transparent;overflow:hidden}
+        .recipe:hover{background:#e8eaf6;border-color:#667eea;transform:translateX(5px)}
+        .recipe.dragging{opacity:0.5;background:#e3f2fd}
+        .recipe-handle{cursor:move;padding:8px;color:#999;margin-right:10px;font-size:20px}
+        .recipe-info{flex:1;min-width:0}
+        .recipe-title{font-weight:600;color:#333;font-size:16px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .recipe-meta{color:#888;font-size:13px}
+        .recipe-thumb{width:60px;height:60px;border-radius:10px;object-fit:cover;margin-right:14px;border:2px solid #e8e8e8;background:#f0f0f0;flex-shrink:0}
+        .recipe-thumb-placeholder{width:60px;height:60px;border-radius:10px;margin-right:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;flex-shrink:0}
         .hidden{display:none !important}
-        .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:15px;padding-bottom:5px}
-        .tab{background:#fff;border:2px solid #e0e0e0;padding:8px 16px;border-radius:20px;white-space:nowrap;cursor:pointer;font-size:14px}
-        .tab.active{background:#667eea;color:#fff;border-color:#667eea}
-        textarea{width:100%;min-height:80px;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:14px;margin-top:10px}
-        .step{background:#f8f8f8;border-radius:12px;padding:15px;margin-bottom:10px}
-        .step-num{display:inline-block;background:#667eea;color:#fff;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;font-weight:bold;margin-right:10px}
-        .ing-row,.seasoning-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:10px;align-items:center}
-        .flex{display:flex;gap:10px}
-        .flex .btn{flex:1}
-        .step-img{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin:10px 0;display:none}
-        .step-img.has-image{display:block}
+        .tabs{display:flex;gap:10px;overflow-x:auto;margin-bottom:15px;padding-bottom:5px;-webkit-overflow-scrolling:touch}
+        .tab{background:#fff;border:2px solid #e8e8e8;padding:10px 20px;border-radius:25px;white-space:nowrap;cursor:pointer;font-size:14px;transition:all 0.3s;font-weight:500}
+        .tab.active{background:#667eea;color:#fff;border-color:#667eea;box-shadow:0 4px 12px rgba(102,126,234,0.3)}
+        textarea{width:100%;min-height:100px;padding:14px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;margin-top:10px;resize:vertical;font-family:inherit;transition:all 0.3s}
+        textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+        .step{background:#f8f9fa;border-radius:14px;padding:18px;margin-bottom:15px;border:2px solid transparent;transition:all 0.3s}
+        .step:hover{border-color:#e0e0e0}
+        .step-header{display:flex;align-items:center;margin-bottom:12px}
+        .step-num{display:inline-flex;align-items:center;justify-content:center;background:#667eea;color:#fff;width:32px;height:32px;border-radius:50%;text-align:center;font-weight:bold;margin-right:12px;font-size:14px;flex-shrink:0}
+        .step-content{flex:1}
+        .step-text{width:100%;min-height:60px;margin-bottom:10px}
+        .ing-row,.seasoning-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:12px;align-items:center}
+        .flex{display:flex;gap:12px;flex-wrap:wrap}
+        .flex .btn{flex:1;min-width:120px}
+        .step-img{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin:12px 0;display:none;border:2px dashed #ddd}
+        .step-img.has-image{display:block;border-style:solid;border-color:#667eea}
         .file-input{display:none}
-        .upload-btn{background:#f0f0f0;color:#667eea;border:2px dashed #ccc;padding:20px;border-radius:10px;text-align:center;cursor:pointer;margin:10px 0}
-        .upload-btn:active{background:#e0e0e0}
-        .detail-img{width:100%;max-height:300px;object-fit:cover;border-radius:10px;margin-bottom:10px}
-        .section-title{color:#667eea;font-size:16px;font-weight:bold;margin:15px 0 10px;padding-bottom:5px;border-bottom:2px solid #f0f0f0}
+        .upload-btn{background:#f0f4ff;color:#667eea;border:2px dashed #667eea;padding:24px;border-radius:12px;text-align:center;cursor:pointer;margin:12px 0;transition:all 0.3s;font-weight:500}
+        .upload-btn:hover{background:#e8eeff;border-style:solid}
+        .upload-btn:active{background:#dde5ff}
+        .detail-img{width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:15px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+        .section-title{color:#667eea;font-size:17px;font-weight:bold;margin:20px 0 12px;padding-bottom:8px;border-bottom:3px solid #f0f0f0;display:flex;align-items:center;gap:8px}
         .section-title:first-child{margin-top:0}
-        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
-        .modal.active{display:flex}
-        .modal-content{background:#fff;border-radius:20px;padding:30px;width:100%;max-width:400px;text-align:center;max-height:90vh;overflow-y:auto}
-        .modal-title{font-size:20px;margin-bottom:20px;color:#333}
-        .share-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px}
-        .share-item{padding:20px;border:2px solid #e0e0e0;border-radius:12px;cursor:pointer;transition:all 0.3s}
-        .share-item:hover{border-color:#667eea;background:#f8f8ff}
-        .share-icon{font-size:32px;margin-bottom:8px}
-        .share-text{font-size:14px;color:#666}
-        .close-btn{width:100%;padding:12px;background:#f0f0f0;border:none;border-radius:10px;font-size:16px;cursor:pointer}
-        .loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:20px 40px;border-radius:10px;display:none;z-index:2000}
-        .folder-item{display:flex;align-items:center;padding:15px;background:#fff;border-radius:12px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.2s}
-        .folder-item:hover{transform:translateX(5px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-        .folder-icon{font-size:24px;margin-right:12px}
-        .folder-name{flex:1;font-weight:bold;color:#333}
-        .folder-count{color:#999;font-size:14px}
-        .folder-arrow{margin-left:10px;color:#999}
-        .breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:15px;flex-wrap:wrap}
-        .breadcrumb-item{background:#fff;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;color:#667eea}
-        .breadcrumb-item.active{background:#667eea;color:#fff}
-        .breadcrumb-separator{color:#fff}
-        .action-bar{display:flex;gap:10px;margin-bottom:15px}
-        .action-bar .btn{flex:1;margin:0}
-        .empty-state{text-align:center;padding:40px;color:#999}
-        .empty-state-icon{font-size:48px;margin-bottom:10px}
-        .creator-info{background:#f8f8f8;padding:10px 15px;border-radius:8px;margin-top:10px;font-size:14px;color:#666}
-        .creator-info strong{color:#667eea}
-        .settings-btn{position:fixed;top:15px;right:15px;background:#fff;border:none;width:40px;height:40px;border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.1);cursor:pointer;font-size:20px;z-index:100}
-        .tag-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
-        .tag-item{background:#f0f0f0;padding:8px 16px;border-radius:20px;font-size:14px;display:flex;align-items:center;gap:8px}
-        .tag-item .delete{color:#ff6b6b;cursor:pointer;font-weight:bold}
-        .add-tag{display:flex;gap:8px;margin-top:10px}
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)}
+        .modal.active{display:flex;animation:fadeIn 0.2s ease}
+        .modal-content{background:#fff;border-radius:24px;padding:28px;width:100%;max-width:420px;text-align:center;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+        .modal-title{font-size:22px;margin-bottom:24px;color:#333;font-weight:600}
+        .share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .share-item{padding:20px 12px;border:2px solid #e8e8e8;border-radius:16px;cursor:pointer;transition:all 0.3s;background:#fafafa}
+        .share-item:hover{border-color:#667eea;background:#f0f4ff;transform:translateY(-3px);box-shadow:0 8px 20px rgba(102,126,234,0.2)}
+        .share-item:active{transform:scale(0.95)}
+        .share-icon{font-size:36px;margin-bottom:10px;display:block}
+        .share-text{font-size:13px;color:#666;font-weight:500}
+        .close-btn{width:100%;padding:14px;background:#f0f0f0;border:none;border-radius:12px;font-size:16px;cursor:pointer;transition:all 0.3s;font-weight:500;color:#666}
+        .close-btn:hover{background:#e0e0e0}
+        .loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:24px 48px;border-radius:16px;display:none;z-index:2000;font-size:16px;font-weight:500;backdrop-filter:blur(10px)}
+        .folder-item{display:flex;align-items:center;padding:18px;background:#fff;border-radius:14px;margin-bottom:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.3s;border:2px solid transparent}
+        .folder-item:hover{transform:translateX(8px);box-shadow:0 8px 20px rgba(0,0,0,0.12);border-color:#667eea}
+        .folder-icon{font-size:28px;margin-right:14px}
+        .folder-name{flex:1;font-weight:600;color:#333;font-size:16px}
+        .folder-count{color:#999;font-size:13px;background:#f0f0f0;padding:4px 10px;border-radius:12px}
+        .folder-arrow{margin-left:10px;color:#999;font-size:20px}
+        .breadcrumb{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+        .breadcrumb-item{background:#fff;padding:10px 18px;border-radius:25px;font-size:14px;cursor:pointer;color:#667eea;transition:all 0.3s;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+        .breadcrumb-item:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.12)}
+        .breadcrumb-item.active{background:#667eea;color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.3)}
+        .breadcrumb-separator{color:#fff;font-weight:bold}
+        .action-bar{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+        .action-bar .btn{flex:1;min-width:100px;margin:0}
+        .empty-state{text-align:center;padding:60px 20px;color:#999}
+        .empty-state-icon{font-size:64px;margin-bottom:16px;display:block}
+        .empty-state-text{font-size:16px;margin-bottom:8px}
+        .empty-state-hint{font-size:13px;color:#bbb}
+        .creator-info{background:linear-gradient(135deg,#f0f4ff 0%,#e8eeff 100%);padding:14px 18px;border-radius:12px;margin-top:12px;font-size:14px;color:#667eea;font-weight:500;border:2px solid #dde5ff}
+        .settings-btn{position:fixed;top:15px;right:15px;background:#fff;border:none;width:48px;height:48px;border-radius:50%;box-shadow:0 4px 15px rgba(0,0,0,0.15);cursor:pointer;font-size:22px;z-index:100;transition:all 0.3s;display:flex;align-items:center;justify-content:center}
+        .settings-btn:hover{transform:rotate(90deg) scale(1.1);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+        .tag-list{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+        .tag-item{background:#f0f4ff;color:#667eea;padding:10px 18px;border-radius:25px;font-size:14px;display:flex;align-items:center;gap:10px;font-weight:500;transition:all 0.3s;border:2px solid transparent}
+        .tag-item:hover{border-color:#667eea;transform:translateY(-2px)}
+        .tag-item .delete{color:#ff6b6b;cursor:pointer;font-weight:bold;font-size:18px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.3s}
+        .tag-item .delete:hover{background:#ff6b6b;color:#fff}
+        .add-tag{display:flex;gap:10px;margin-top:12px}
         .add-tag input{flex:1}
-        .add-tag button{width:auto;padding:8px 16px}
-        .app-title-edit{font-size:18px;font-weight:bold;color:#667eea;margin-bottom:5px;border:none;background:transparent;width:100%;text-align:center}
-        .app-slogan-edit{font-size:14px;color:#666;border:none;background:transparent;width:100%;text-align:center;margin-bottom:10px}
+        .add-tag button{width:auto;padding:10px 20px}
+        .app-title-edit{font-size:22px;font-weight:bold;color:#667eea;margin-bottom:8px;border:none;background:transparent;width:100%;text-align:center;cursor:default}
+        .app-slogan-edit{font-size:15px;color:#888;border:none;background:transparent;width:100%;text-align:center;margin-bottom:12px;cursor:default}
+        .delete-btn{background:#ff6b6b;color:#fff;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;transition:all 0.3s;display:flex;align-items:center;justify-content:center}
+        .delete-btn:hover{background:#ff5252;transform:scale(1.1)}
+        .sort-hint{color:#667eea;font-size:13px;margin-top:8px;font-weight:500}
+        .move-list{max-height:300px;overflow-y:auto;text-align:left}
+        .move-item{padding:14px;border:2px solid #e8e8e8;border-radius:12px;margin-bottom:10px;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:10px}
+        .move-item:hover{border-color:#667eea;background:#f0f4ff}
+        .move-item.selected{border-color:#667eea;background:#667eea;color:#fff}
+        .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:15px}
+        .stat-item{background:#f8f9fa;padding:16px;border-radius:12px;text-align:center}
+        .stat-num{font-size:24px;font-weight:bold;color:#667eea}
+        .stat-label{font-size:12px;color:#888;margin-top:4px}
+        
+        /* 主图上传样式 */
+        .main-image-container{margin-bottom:20px;text-align:center}
+        .main-image-preview{width:100%;max-height:300px;object-fit:cover;border-radius:16px;display:none;margin-bottom:12px;border:3px solid #e8e8e8}
+        .main-image-preview.has-image{display:block;border-color:#667eea}
+        .main-image-placeholder{width:100%;height:200px;border:3px dashed #667eea;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#667eea;cursor:pointer;transition:all 0.3s;background:#f0f4ff;margin-bottom:12px}
+        .main-image-placeholder:hover{background:#e8eeff;border-style:solid}
+        .main-image-placeholder .icon{font-size:48px;margin-bottom:8px}
+        .main-image-placeholder .text{font-size:14px;font-weight:500}
+        .main-image-preview-wrapper{position:relative;display:inline-block;width:100%}
+        .main-image-change-btn{position:absolute;bottom:15px;right:15px;background:rgba(102,126,234,0.9);color:#fff;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;backdrop-filter:blur(10px);transition:all 0.3s}
+        .main-image-change-btn:hover{background:#667eea;transform:scale(1.05)}
+        
+        @media(max-width:480px){
+            .ing-row,.seasoning-row{grid-template-columns:1fr 1fr;gap:8px}
+            .ing-row input:first-child,.seasoning-row input:first-child{grid-column:1/-1}
+            .share-grid{grid-template-columns:1fr;gap:12px}
+            .share-item{display:flex;align-items:center;padding:16px;text-align:left;gap:16px}
+            .share-icon{margin-bottom:0;font-size:28px}
+            .flex .btn{min-width:calc(50% - 6px)}
+            .recipe-thumb,.recipe-thumb-placeholder{width:50px;height:50px}
+        }
     </style>
 </head>
 <body>
-    <button class="settings-btn" onclick="showSettings()">⚙️</button>
+    <button class="settings-btn" onclick="showSettings()" title="设置">⚙️</button>
     
     <!-- 主页面 -->
     <div id="page-main">
@@ -97,6 +157,20 @@
             <div class="creator-info">
                 👨‍🍳 当前用户：<strong>Chef KtZ</strong>
             </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-num" id="statRecipes">0</div>
+                    <div class="stat-label">菜谱</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num" id="statFolders">0</div>
+                    <div class="stat-label">文件夹</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num" id="statCategories">0</div>
+                    <div class="stat-label">分类</div>
+                </div>
+            </div>
         </div>
         
         <div class="breadcrumb" id="breadcrumb">
@@ -104,25 +178,45 @@
         </div>
         
         <div class="action-bar">
-            <button class="btn btn-secondary" onclick="showNewFolder()">+ 文件夹</button>
-            <button class="btn" onclick="showEdit()">+ 菜谱</button>
-            <button class="btn btn-info" onclick="toggleSortMode()" id="sortBtn">排序</button>
+            <button class="btn btn-secondary" onclick="showNewFolder()">📁 新建文件夹</button>
+            <button class="btn" onclick="showEdit()">📝 新建菜谱</button>
+            <button class="btn btn-info" onclick="toggleSortMode()" id="sortBtn">🔀 排序模式</button>
         </div>
         
         <div id="folderList"></div>
         <div id="recipeList" style="margin-top:15px"></div>
+        
+        <div class="empty-state hidden" id="emptyState">
+            <span class="empty-state-icon">🍽️</span>
+            <div class="empty-state-text">还没有菜谱</div>
+            <div class="empty-state-hint">点击"新建菜谱"开始记录美食</div>
+        </div>
     </div>
 
     <!-- 编辑页面 -->
     <div id="page-edit" class="hidden">
         <div class="card">
-            <button class="btn btn-secondary" onclick="backToMain()">← 返回</button>
-            <h2 id="edit-title" style="margin-top:15px;color:#667eea">创建新菜谱</h2>
+            <button class="btn btn-secondary" onclick="backToMain()">← 返回列表</button>
+            <h2 id="edit-title" style="margin-top:15px">📝 创建新菜谱</h2>
         </div>
+        
         <div class="card">
-            <input type="text" class="input" id="name" placeholder="菜谱名称" style="margin-bottom:10px">
+            <!-- 主图上传区域 -->
+            <div class="main-image-container">
+                <div class="main-image-preview-wrapper">
+                    <img id="mainImagePreview" class="main-image-preview" onclick="viewMainImage()">
+                    <button type="button" class="main-image-change-btn hidden" id="changeMainImageBtn" onclick="selectMainImage()">更换图片</button>
+                </div>
+                <div class="main-image-placeholder" id="mainImagePlaceholder" onclick="selectMainImage()">
+                    <span class="icon">📷</span>
+                    <span class="text">点击上传菜谱主图</span>
+                </div>
+                <input type="file" id="mainImageInput" class="file-input" accept="image/*" onchange="handleMainImageSelect(this)">
+            </div>
+            
+            <input type="text" class="input" id="name" placeholder="菜谱名称（如：红烧狮子头）" style="margin-bottom:12px">
             <select class="input" id="category">
-                <option value="">选择分类</option>
+                <option value="">📂 选择分类</option>
             </select>
         </div>
         
@@ -137,28 +231,29 @@
         </div>
         
         <div class="card">
-            <h3>📝 步骤（可配图）</h3>
+            <div class="section-title">📝 烹饪步骤</div>
             <div id="steps"></div>
             <button class="btn btn-secondary" onclick="addStep()">+ 添加步骤</button>
         </div>
+        
         <div class="flex">
-            <button class="btn" onclick="save()">保存</button>
-            <button class="btn btn-secondary" onclick="backToMain()">取消</button>
+            <button class="btn btn-success" onclick="save()">💾 保存菜谱</button>
+            <button class="btn btn-secondary" onclick="backToMain()">❌ 取消</button>
         </div>
     </div>
 
     <!-- 详情页面 -->
     <div id="page-detail" class="hidden">
         <div class="card">
-            <button class="btn btn-secondary" onclick="backToMain()">← 返回</button>
-            <h2 id="detail-name" style="margin-top:15px;color:#667eea"></h2>
+            <button class="btn btn-secondary" onclick="backToMain()">← 返回列表</button>
+            <h2 id="detail-name" style="margin-top:15px"></h2>
         </div>
         <div id="detail-content"></div>
         <div class="flex">
-            <button class="btn" onclick="doEdit()">编辑</button>
-            <button class="btn btn-success" onclick="showShare()">分享</button>
-            <button class="btn btn-warning" onclick="showMove()">移动</button>
-            <button class="btn btn-danger" onclick="doDelete()">删除</button>
+            <button class="btn" onclick="doEdit()">✏️ 编辑</button>
+            <button class="btn btn-success" onclick="showShare()">📤 分享</button>
+            <button class="btn btn-warning" onclick="showMove()">📂 移动</button>
+            <button class="btn btn-danger" onclick="doDelete()">🗑️ 删除</button>
         </div>
     </div>
 
@@ -167,900 +262,17 @@
         <div class="modal-content">
             <h3 class="modal-title">⚙️ 应用设置</h3>
             
-            <div style="text-align:left;margin-bottom:20px">
-                <label style="display:block;margin-bottom:5px;color:#666;font-size:14px">应用名称</label>
-                <input type="text" class="input" id="settingAppName" style="margin-bottom:15px">
+            <div style="text-align:left;margin-bottom:24px">
+                <label style="display:block;margin-bottom:6px;color:#666;font-size:14px;font-weight:500">应用名称</label>
+                <input type="text" class="input" id="settingAppName" style="margin-bottom:16px" placeholder="输入应用名称">
                 
-                <label style="display:block;margin-bottom:5px;color:#666;font-size:14px">应用签名</label>
-                <input type="text" class="input" id="settingAppSlogan" style="margin-bottom:20px">
+                <label style="display:block;margin-bottom:6px;color:#666;font-size:14px;font-weight:500">应用签名</label>
+                <input type="text" class="input" id="settingAppSlogan" style="margin-bottom:20px" placeholder="输入签名">
                 
-                <label style="display:block;margin-bottom:5px;color:#666;font-size:14px">菜谱分类</label>
+                <label style="display:block;margin-bottom:10px;color:#666;font-size:14px;font-weight:500">菜谱分类</label>
                 <div class="tag-list" id="categoryList"></div>
                 <div class="add-tag">
-                    <input type="text" class="input" id="newCategory" placeholder="新分类名称">
+                    <input type="text" class="input" id="newCategory" placeholder="输入新分类">
                     <button class="btn btn-small" onclick="addCategory()">添加</button>
                 </div>
-                
-                <label style="display:block;margin:20px 0 5px;color:#666;font-size:14px">单位选项</label>
-                <div class="tag-list" id="unitList"></div>
-                <div class="add-tag">
-                    <input type="text" class="input" id="newUnit" placeholder="新单位名称">
-                    <button class="btn btn-small" onclick="addUnit()">添加</button>
-                </div>
-            </div>
-            
-            <div class="flex">
-                <button class="btn" onclick="saveSettings()">保存设置</button>
-                <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 其他弹窗 -->
-    <div id="shareModal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title">分享菜谱</h3>
-            <div class="share-grid">
-                <div class="share-item" onclick="shareLink()">
-                    <div class="share-icon">🔗</div>
-                    <div class="share-text">复制链接</div>
-                </div>
-                <div class="share-item" onclick="saveImage()">
-                    <div class="share-icon">🖼️</div>
-                    <div class="share-text">保存图片</div>
-                </div>
-                <div class="share-item" onclick="savePDF()">
-                    <div class="share-icon">📄</div>
-                    <div class="share-text">保存PDF</div>
-                </div>
-            </div>
-            <button class="close-btn" onclick="closeShare()">取消</button>
-        </div>
-    </div>
-
-    <div id="folderModal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title">新建文件夹</h3>
-            <input type="text" class="input" id="folderName" placeholder="文件夹名称" style="margin-bottom:20px">
-            <div class="flex">
-                <button class="btn" onclick="createFolder()">创建</button>
-                <button class="btn btn-secondary" onclick="closeFolderModal()">取消</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="moveModal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title">移动到</h3>
-            <div class="move-list" id="moveList"></div>
-            <div class="flex" style="margin-top:15px">
-                <button class="btn" onclick="confirmMove()">确认移动</button>
-                <button class="btn btn-secondary" onclick="closeMoveModal()">取消</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="folderMenuModal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title">文件夹操作</h3>
-            <div style="text-align:left">
-                <button class="btn btn-secondary" onclick="enterFolder()" style="margin-bottom:10px">📂 打开</button>
-                <button class="btn btn-secondary" onclick="renameFolder()" style="margin-bottom:10px">✏️ 重命名</button>
-                <button class="btn btn-danger" onclick="deleteFolder()">🗑️ 删除</button>
-            </div>
-            <button class="close-btn" onclick="closeFolderMenu()" style="margin-top:15px">取消</button>
-        </div>
-    </div>
-
-    <div id="loading" class="loading">生成中...</div>
-
-    <script>
-        if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
-        
-        // 默认配置
-        const DEFAULT_CATEGORIES=['饭类','粉类','小食','主菜','冷食'];
-        const DEFAULT_UNITS=['支','包','克','毫升','个','只','瓶','升','勺','茶匙','汤匙','斤','两','把','块','片','根','条','适量','少许'];
-        
-        // 加载配置
-        let appConfig=JSON.parse(localStorage.getItem('appConfig'))||{
-            name:'KtZ的日常研发菜单',
-            slogan:'记录每一道美味的诞生过程',
-            categories:[...DEFAULT_CATEGORIES],
-            units:[...DEFAULT_UNITS]
-        };
-        
-        let folders=JSON.parse(localStorage.getItem('recipeFolders'))||[{id:'root',name:'根目录',parentId:null,order:0}];
-        let recipes=JSON.parse(localStorage.getItem('recipes'))||[];
-        let currentFolderId='root';
-        let selectedFolderId=null;
-        let viewingId=null;
-        let editingId=null;
-        let sortMode=false;
-        let moveTargetId=null;
-        let longPressTimer=null;
-        
-        const CREATOR_NAME='Chef KtZ';
-
-        // 初始化
-        function init(){
-            updateAppDisplay();
-            renderCategoryOptions();
-            renderMain();
-        }
-        
-        init();
-
-        function updateAppDisplay(){
-            document.getElementById('app-title').textContent=appConfig.name;
-            document.getElementById('appNameDisplay').value=appConfig.name;
-            document.getElementById('appSloganDisplay').value=appConfig.slogan;
-            document.title=appConfig.name;
-        }
-
-        function renderCategoryOptions(){
-            const select=document.getElementById('category');
-            select.innerHTML='<option value="">选择分类</option>'+
-                appConfig.categories.map(c=>`<option value="${c}">${c}</option>`).join('');
-        }
-
-        function getUnitOptions(selectedUnit=''){
-            return '<option value="">单位</option>'+
-                appConfig.units.map(u=>`<option value="${u}" ${u===selectedUnit?'selected':''}>${u}</option>`).join('');
-        }
-
-        // 设置功能
-        function showSettings(){
-            document.getElementById('settingAppName').value=appConfig.name;
-            document.getElementById('settingAppSlogan').value=appConfig.slogan;
-            renderSettingsTags();
-            document.getElementById('settingsModal').classList.add('active');
-        }
-
-        function closeSettings(){
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-
-        function renderSettingsTags(){
-            // 分类标签
-            document.getElementById('categoryList').innerHTML=appConfig.categories.map((c,i)=>
-                `<span class="tag-item">${c}<span class="delete" onclick="removeCategory(${i})">×</span></span>`
-            ).join('');
-            
-            // 单位标签
-            document.getElementById('unitList').innerHTML=appConfig.units.map((u,i)=>
-                `<span class="tag-item">${u}<span class="delete" onclick="removeUnit(${i})">×</span></span>`
-            ).join('');
-        }
-
-        function addCategory(){
-            const input=document.getElementById('newCategory');
-            const value=input.value.trim();
-            if(!value)return;
-            if(appConfig.categories.includes(value)){
-                alert('分类已存在');
-                return;
-            }
-            appConfig.categories.push(value);
-            input.value='';
-            renderSettingsTags();
-        }
-
-        function removeCategory(index){
-            if(appConfig.categories.length<=1){
-                alert('至少保留一个分类');
-                return;
-            }
-            appConfig.categories.splice(index,1);
-            renderSettingsTags();
-        }
-
-        function addUnit(){
-            const input=document.getElementById('newUnit');
-            const value=input.value.trim();
-            if(!value)return;
-            if(appConfig.units.includes(value)){
-                alert('单位已存在');
-                return;
-            }
-            appConfig.units.push(value);
-            input.value='';
-            renderSettingsTags();
-        }
-
-        function removeUnit(index){
-            if(appConfig.units.length<=1){
-                alert('至少保留一个单位');
-                return;
-            }
-            appConfig.units.splice(index,1);
-            renderSettingsTags();
-        }
-
-        function saveSettings(){
-            appConfig.name=document.getElementById('settingAppName').value.trim()||appConfig.name;
-            appConfig.slogan=document.getElementById('settingAppSlogan').value.trim();
-            
-            localStorage.setItem('appConfig',JSON.stringify(appConfig));
-            updateAppDisplay();
-            renderCategoryOptions();
-            closeSettings();
-        }
-
-        // 主页面渲染
-        function renderMain(){
-            renderBreadcrumb();
-            renderFolders();
-            renderRecipes();
-        }
-
-        function renderBreadcrumb(){
-            const bc=document.getElementById('breadcrumb');
-            let path=[];
-            let curr=folders.find(f=>f.id===currentFolderId);
-            while(curr){
-                path.unshift(curr);
-                curr=folders.find(f=>f.id===curr.parentId);
-            }
-            
-            bc.innerHTML=path.map((f,i)=>`
-                <span class="breadcrumb-item ${i===path.length-1?'active':''}" onclick="navigateTo('${f.id}')">
-                    ${f.id==='root'?'📁 根目录':'📂 '+f.name}
-                </span>
-                ${i<path.length-1?'<span class="breadcrumb-separator">></span>':''}
-            `).join('');
-        }
-
-        function renderFolders(){
-            const list=document.getElementById('folderList');
-            const currentFolders=folders.filter(f=>f.parentId===currentFolderId).sort((a,b)=>a.order-b.order);
-            
-            if(currentFolders.length===0){
-                list.innerHTML='';
-                return;
-            }
-            
-            list.innerHTML=currentFolders.map((f,i)=>`
-                <div class="folder-item" 
-                     data-id="${f.id}" 
-                     onclick="onFolderClick('${f.id}')"
-                     onmousedown="startLongPress('${f.id}')"
-                     ontouchstart="startLongPress('${f.id}')"
-                     onmouseup="cancelLongPress()"
-                     ontouchend="cancelLongPress()"
-                     onmouseleave="cancelLongPress()"
-                     draggable="${sortMode}"
-                     ondragstart="dragStart(event,'${f.id}')"
-                     ondragover="dragOver(event)"
-                     ondrop="drop(event,'folder')">
-                    <span class="recipe-handle" style="display:${sortMode?'block':'none'}">≡</span>
-                    <span class="folder-icon">📁</span>
-                    <span class="folder-name">${f.name}</span>
-                    <span class="folder-count">${getFolderCount(f.id)}项</span>
-                    <span class="folder-arrow">></span>
-                </div>
-            `).join('');
-        }
-
-        function renderRecipes(){
-            const list=document.getElementById('recipeList');
-            const currentRecipes=recipes.filter(r=>r.folderId===currentFolderId).sort((a,b)=>(a.order||0)-(b.order||0));
-            
-            if(currentRecipes.length===0){
-                if(folders.filter(f=>f.parentId===currentFolderId).length===0){
-                    list.innerHTML=`
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📂</div>
-                            <p>当前文件夹为空</p>
-                        </div>
-                    `;
-                }else{
-                    list.innerHTML='';
-                }
-                return;
-            }
-            
-            list.innerHTML=currentRecipes.map((r,i)=>`
-                <div class="recipe" 
-                     data-id="${r.id}"
-                     onclick="${sortMode?'':'showDetail(\''+r.id+'\')'}"
-                     draggable="${sortMode}"
-                     ondragstart="dragStart(event,'${r.id}')"
-                     ondragover="dragOver(event)"
-                     ondrop="drop(event,'recipe')">
-                    <span class="recipe-handle" style="display:${sortMode?'inline':'none'}">≡</span>
-                    <div style="flex:1">
-                        <div style="font-weight:bold;font-size:18px;color:#333">${r.name}</div>
-                        <div style="color:#999;font-size:14px;margin-top:5px">
-                            ${r.category} · ${(r.seasonings?.length||0)+(r.ings?.length||0)}种材料
-                        </div>
-                    </div>
-                    <span style="font-size:20px;color:#667eea">${sortMode?'':'→'}</span>
-                </div>
-            `).join('');
-        }
-
-        function getFolderCount(folderId){
-            const subFolders=folders.filter(f=>f.parentId===folderId).length;
-            const subRecipes=recipes.filter(r=>r.folderId===folderId).length;
-            return subFolders+subRecipes;
-        }
-
-        function onFolderClick(id){
-            if(sortMode)return;
-            currentFolderId=id;
-            renderMain();
-        }
-
-        function startLongPress(id){
-            if(sortMode)return;
-            longPressTimer=setTimeout(()=>{
-                selectedFolderId=id;
-                document.getElementById('folderMenuModal').classList.add('active');
-            },500);
-        }
-
-        function cancelLongPress(){
-            if(longPressTimer){
-                clearTimeout(longPressTimer);
-                longPressTimer=null;
-            }
-        }
-
-        function navigateTo(folderId){
-            currentFolderId=folderId;
-            renderMain();
-        }
-
-        function goHome(){
-            currentFolderId='root';
-            renderMain();
-        }
-
-        // 文件夹操作
-        function showNewFolder(){
-            document.getElementById('folderName').value='';
-            document.getElementById('folderModal').classList.add('active');
-        }
-
-        function closeFolderModal(){
-            document.getElementById('folderModal').classList.remove('active');
-        }
-
-        function createFolder(){
-            const name=document.getElementById('folderName').value.trim();
-            if(!name)return;
-            
-            const siblings=folders.filter(f=>f.parentId===currentFolderId);
-            folders.push({
-                id:'folder_'+Date.now(),
-                name:name,
-                parentId:currentFolderId,
-                order:siblings.length
-            });
-            
-            saveFolders();
-            closeFolderModal();
-            renderMain();
-        }
-
-        function enterFolder(){
-            closeFolderMenu();
-            if(selectedFolderId){
-                currentFolderId=selectedFolderId;
-                renderMain();
-            }
-        }
-
-        function renameFolder(){
-            closeFolderMenu();
-            const folder=folders.find(f=>f.id===selectedFolderId);
-            if(!folder)return;
-            
-            const newName=prompt('新文件夹名称：',folder.name);
-            if(newName?.trim()){
-                folder.name=newName.trim();
-                saveFolders();
-                renderMain();
-            }
-        }
-
-        function deleteFolder(){
-            closeFolderMenu();
-            if(!confirm('确定删除？内容将移到根目录'))return;
-            
-            folders.filter(f=>f.parentId===selectedFolderId).forEach(f=>f.parentId='root');
-            recipes.filter(r=>r.folderId===selectedFolderId).forEach(r=>r.folderId='root');
-            folders=folders.filter(f=>f.id!==selectedFolderId);
-            
-            saveFolders();
-            saveRecipes();
-            renderMain();
-        }
-
-        function closeFolderMenu(){
-            document.getElementById('folderMenuModal').classList.remove('active');
-            selectedFolderId=null;
-        }
-
-        // 排序模式
-        function toggleSortMode(){
-            sortMode=!sortMode;
-            document.getElementById('sortBtn').textContent=sortMode?'完成':'排序';
-            document.getElementById('sortBtn').className=sortMode?'btn btn-success':'btn btn-info';
-            renderMain();
-        }
-
-        // 拖拽
-        let draggedId=null;
-        let draggedType=null;
-
-        function dragStart(e,id){
-            draggedId=id;
-            draggedType=folders.find(f=>f.id===id)?'folder':'recipe';
-            e.dataTransfer.effectAllowed='move';
-        }
-
-        function dragOver(e){
-            e.preventDefault();
-        }
-
-        function drop(e,type){
-            e.preventDefault();
-            if(!draggedId)return;
-            
-            const targetEl=e.target.closest('.folder-item, .recipe');
-            if(!targetEl)return;
-            
-            const targetId=targetEl.dataset.id;
-            if(draggedId===targetId)return;
-            
-            if(draggedType==='folder'&&type==='folder'){
-                const siblings=folders.filter(f=>f.parentId===currentFolderId).sort((a,b)=>a.order-b.order);
-                const fromIdx=siblings.findIndex(f=>f.id===draggedId);
-                const toIdx=siblings.findIndex(f=>f.id===targetId);
-                
-                if(fromIdx>-1&&toIdx>-1){
-                    const [removed]=siblings.splice(fromIdx,1);
-                    siblings.splice(toIdx,0,removed);
-                    siblings.forEach((f,i)=>f.order=i);
-                    saveFolders();
-                    renderFolders();
-                }
-            }else if(draggedType==='recipe'&&type==='recipe'){
-                const siblings=recipes.filter(r=>r.folderId===currentFolderId).sort((a,b)=>(a.order||0)-(b.order||0));
-                const fromIdx=siblings.findIndex(r=>r.id===draggedId);
-                const toIdx=siblings.findIndex(r=>r.id===targetId);
-                
-                if(fromIdx>-1&&toIdx>-1){
-                    const [removed]=siblings.splice(fromIdx,1);
-                    siblings.splice(toIdx,0,removed);
-                    siblings.forEach((r,i)=>r.order=i);
-                    saveRecipes();
-                    renderRecipes();
-                }
-            }
-            
-            draggedId=null;
-            draggedType=null;
-        }
-
-        // 移动菜谱
-        function showMove(){
-            const r=recipes.find(x=>x.id===viewingId);
-            if(!r)return;
-            
-            document.getElementById('moveList').innerHTML=renderMoveOptions('root',0,r.folderId);
-            document.getElementById('moveModal').classList.add('active');
-        }
-
-        function renderMoveOptions(parentId,level,currentFolderId){
-            const subFolders=folders.filter(f=>f.parentId===parentId&&f.id!=='root');
-            let html='';
-            
-            if(level===0){
-                html+=`<div class="move-item ${currentFolderId==='root'?'selected':''}" onclick="selectMoveTarget('root')">📁 根目录</div>`;
-            }
-            
-            subFolders.forEach(f=>{
-                const hasChildren=folders.some(child=>child.parentId===f.id);
-                html+=`<div class="move-item ${currentFolderId===f.id?'selected':''}" onclick="selectMoveTarget('${f.id}')" style="padding-left:${12+level*20}px">📂 ${f.name}</div>`;
-                if(hasChildren){
-                    html+=renderMoveOptions(f.id,level+1,currentFolderId);
-                }
-            });
-            
-            return html;
-        }
-
-        function selectMoveTarget(folderId){
-            moveTargetId=folderId;
-            document.querySelectorAll('.move-item').forEach(el=>el.classList.remove('selected'));
-            event.target.classList.add('selected');
-        }
-
-        function confirmMove(){
-            if(!moveTargetId)return;
-            
-            const r=recipes.find(x=>x.id===viewingId);
-            if(r){
-                r.folderId=moveTargetId;
-                r.order=recipes.filter(x=>x.folderId===moveTargetId).length;
-                saveRecipes();
-            }
-            
-            closeMoveModal();
-            backToMain();
-        }
-
-        function closeMoveModal(){
-            document.getElementById('moveModal').classList.remove('active');
-            moveTargetId=null;
-        }
-
-        // 页面切换
-        function showEdit(){
-            editingId=null;
-            document.getElementById('edit-title').textContent='创建新菜谱';
-            document.getElementById('name').value='';
-            document.getElementById('category').value='';
-            document.getElementById('seasonings').innerHTML=seasoningRow();
-            document.getElementById('ings').innerHTML=ingRow();
-            document.getElementById('steps').innerHTML=createStepHtml(1);
-            
-            document.getElementById('page-main').classList.add('hidden');
-            document.getElementById('page-edit').classList.remove('hidden');
-        }
-
-        function backToMain(){
-            document.getElementById('page-main').classList.remove('hidden');
-            document.getElementById('page-edit').classList.add('hidden');
-            document.getElementById('page-detail').classList.add('hidden');
-            closeShare();
-            renderMain();
-        }
-
-        // 表单组件
-        function seasoningRow(name='',amount='',unit=''){
-            return `
-                <div class="seasoning-row">
-                    <input type="text" class="input" placeholder="调料名称" value="${name}">
-                    <input type="text" class="input" placeholder="份量" value="${amount}">
-                    <select class="input">${getUnitOptions(unit)}</select>
-                    <button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button>
-                </div>
-            `;
-        }
-
-        function ingRow(name='',amount='',unit=''){
-            return `
-                <div class="ing-row">
-                    <input type="text" class="input" placeholder="食材名称" value="${name}">
-                    <input type="text" class="input" placeholder="份量" value="${amount}">
-                    <select class="input">${getUnitOptions(unit)}</select>
-                    <button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">×</button>
-                </div>
-            `;
-        }
-
-        function createStepHtml(n,imgData='',text=''){
-            return `
-                <div class="step" data-step="${n}">
-                    <span class="step-num">${n}</span>
-                    <div class="upload-btn" onclick="this.nextElementSibling.click()">📷 点击选择图片（可选）</div>
-                    <input type="file" class="file-input" accept="image/*" onchange="handleImage(this)">
-                    <img class="step-img ${imgData?'has-image':''}" src="${imgData}" ${imgData?'':'style="display:none"'} onclick="this.previousElementSibling.previousElementSibling.click()">
-                    <textarea placeholder="描述步骤...">${text}</textarea>
-                    <button class="btn btn-danger btn-small" onclick="this.parentElement.remove();renum()">删除</button>
-                </div>
-            `;
-        }
-
-        function handleImage(input){
-            const file=input.files[0];
-            if(!file)return;
-            
-            const reader=new FileReader();
-            reader.onload=function(e){
-                const img=input.nextElementSibling;
-                img.src=e.target.result;
-                img.classList.add('has-image');
-                img.style.display='block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function addSeasoning(){
-            document.getElementById('seasonings').insertAdjacentHTML('beforeend',seasoningRow());
-        }
-
-        function addIng(){
-            document.getElementById('ings').insertAdjacentHTML('beforeend',ingRow());
-        }
-
-        function addStep(){
-            const n=document.querySelectorAll('#steps .step').length+1;
-            document.getElementById('steps').insertAdjacentHTML('beforeend',createStepHtml(n));
-        }
-
-        function renum(){
-            document.querySelectorAll('#steps .step').forEach((step,i)=>{
-                step.querySelector('.step-num').textContent=i+1;
-            });
-        }
-
-        // 保存菜谱
-        function save(){
-            const name=document.getElementById('name').value.trim();
-            const cat=document.getElementById('category').value;
-            if(!name||!cat){alert('请填写名称和分类');return;}
-            
-            const seasonings=[];
-            document.querySelectorAll('#seasonings .seasoning-row').forEach(row=>{
-                const inputs=row.querySelectorAll('input,select');
-                if(inputs[0].value)seasonings.push({
-                    name:inputs[0].value,
-                    amount:inputs[1].value||'0',
-                    unit:inputs[2].value||'适量'
-                });
-            });
-            
-            const ings=[];
-            document.querySelectorAll('#ings .ing-row').forEach(row=>{
-                const inputs=row.querySelectorAll('input,select');
-                if(inputs[0].value)ings.push({
-                    name:inputs[0].value,
-                    amount:inputs[1].value||'0',
-                    unit:inputs[2].value||'适量'
-                });
-            });
-            
-            const steps=[];
-            document.querySelectorAll('#steps .step').forEach(step=>{
-                const text=step.querySelector('textarea').value;
-                const img=step.querySelector('.step-img').src;
-                if(text||img.includes('data:image')){
-                    steps.push({text:text,image:img.includes('data:image')?img:''});
-                }
-            });
-            
-            const siblings=recipes.filter(r=>r.folderId===currentFolderId);
-            
-            const recipe={
-                id:editingId||'recipe_'+Date.now(),
-                name,
-                category:cat,
-                seasonings,
-                ings,
-                steps,
-                date:new Date().toLocaleDateString(),
-                creator:CREATOR_NAME,
-                folderId:currentFolderId,
-                order:editingId?undefined:siblings.length
-            };
-            
-            if(editingId){
-                const i=recipes.findIndex(r=>r.id===editingId);
-                recipe.order=recipes[i].order;
-                recipe.folderId=recipes[i].folderId;
-                recipes[i]=recipe;
-            }else{
-                recipes.push(recipe);
-            }
-            
-            saveRecipes();
-            backToMain();
-        }
-
-        // 详情页
-        function showDetail(id){
-            viewingId=id;
-            const r=recipes.find(x=>x.id===id);
-            if(!r)return;
-            
-            document.getElementById('detail-name').textContent=r.name;
-            
-            let seasoningsHtml='';
-            if(r.seasonings?.length>0){
-                seasoningsHtml=`<div class="card"><h3>🧂 调料</h3>${r.seasonings.map(s=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${s.name}</span><span style="color:#667eea;font-weight:bold">${s.amount}${s.unit}</span></div>`).join('')}</div>`;
-            }
-            
-            let ingsHtml='';
-            if(r.ings?.length>0){
-                ingsHtml=`<div class="card"><h3>🥘 食材</h3>${r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:10px;background:#f8f8f8;border-radius:8px;margin-bottom:8px"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('')}</div>`;
-            }
-            
-            let stepsHtml='';
-            if(r.steps?.length>0){
-                stepsHtml=`<div class="card"><h3>📝 步骤</h3>${r.steps.map((s,i)=>`<div class="step"><span class="step-num">${i+1}</span>${s.image?`<img class="detail-img" src="${s.image}">`:''}<p style="line-height:1.6">${s.text||''}</p></div>`).join('')}</div>`;
-            }
-            
-            document.getElementById('detail-content').innerHTML=`
-                <div class="card">
-                    <span style="background:#667eea;color:#fff;padding:5px 15px;border-radius:15px;font-size:14px">${r.category}</span>
-                    <span style="color:#999;font-size:14px;margin-left:10px">${r.date}</span>
-                    ${r.creator?`<div style="color:#667eea;font-size:14px;margin-top:5px">👨‍🍳 创建人：${r.creator}</div>`:''}
-                </div>
-                ${seasoningsHtml}
-                ${ingsHtml}
-                ${stepsHtml||'<div class="card"><p style="color:#999">暂无步骤</p></div>'}
-            `;
-            
-            document.getElementById('page-main').classList.add('hidden');
-            document.getElementById('page-detail').classList.remove('hidden');
-        }
-
-        function doEdit(){
-            const r=recipes.find(x=>x.id===viewingId);
-            if(!r)return;
-            
-            editingId=r.id;
-            document.getElementById('edit-title').textContent='编辑菜谱';
-            document.getElementById('name').value=r.name;
-            document.getElementById('category').value=r.category;
-            
-            document.getElementById('seasonings').innerHTML=r.seasonings?.length>0?r.seasonings.map(s=>seasoningRow(s.name,s.amount,s.unit)).join(''):seasoningRow();
-            document.getElementById('ings').innerHTML=r.ings?.length>0?r.ings.map(i=>ingRow(i.name,i.amount,i.unit)).join(''):ingRow();
-            document.getElementById('steps').innerHTML=r.steps?.length>0?r.steps.map((s,i)=>createStepHtml(i+1,s.image||'',s.text||'')).join(''):createStepHtml(1);
-            
-            document.getElementById('page-detail').classList.add('hidden');
-            document.getElementById('page-edit').classList.remove('hidden');
-        }
-
-        function doDelete(){
-            if(!confirm('确定删除？'))return;
-            recipes=recipes.filter(r=>r.id!==viewingId);
-            saveRecipes();
-            backToMain();
-        }
-
-        // 分享
-        function showShare(){
-            document.getElementById('shareModal').classList.add('active');
-        }
-
-        function closeShare(){
-            document.getElementById('shareModal').classList.remove('active');
-        }
-
-        function shareLink(){
-            const r=recipes.find(x=>x.id===viewingId);
-            const url=window.location.href+'?recipe='+r.id;
-            
-            if(navigator.clipboard){
-                navigator.clipboard.writeText(url).then(()=>{
-                    alert('链接已复制！');
-                    closeShare();
-                });
-            }else{
-                alert('请手动复制：'+url);
-            }
-        }
-
-        function getCurrentTime(){
-            const now=new Date();
-            return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        }
-
-        async function saveImage(){
-            showLoading(true);
-            try{
-                const r=recipes.find(x=>x.id===viewingId);
-                const content=createShareContent(r);
-                
-                const canvas=await html2canvas(content,{scale:4,backgroundColor:'#ffffff',useCORS:true});
-                
-                const link=document.createElement('a');
-                link.download=`${r.name}_菜谱.png`;
-                link.href=canvas.toDataURL('image/png',1.0);
-                link.click();
-                
-                content.remove();
-                closeShare();
-            }catch(err){
-                alert('生成失败：'+err.message);
-            }
-            showLoading(false);
-        }
-
-        async function savePDF(){
-            showLoading(true);
-            try{
-                const r=recipes.find(x=>x.id===viewingId);
-                const content=createShareContent(r);
-                
-                const canvas=await html2canvas(content,{scale:4,backgroundColor:'#ffffff',useCORS:true});
-                const imgData=canvas.toDataURL('image/png',1.0);
-                
-                const {jsPDF}=window.jspdf;
-                const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4',compress:false});
-                
-                const imgWidth=210;
-                const imgHeight=canvas.height*imgWidth/canvas.width;
-                
-                pdf.addImage(imgData,'PNG',0,0,imgWidth,imgHeight);
-                
-                let heightLeft=imgHeight-295;
-                while(heightLeft>0){
-                    pdf.addPage();
-                    pdf.addImage(imgData,'PNG',0,-heightLeft,imgWidth,imgHeight);
-                    heightLeft-=295;
-                }
-                
-                pdf.save(`${r.name}_菜谱.pdf`);
-                content.remove();
-                closeShare();
-            }catch(err){
-                alert('生成失败：'+err.message);
-            }
-            showLoading(false);
-        }
-
-        function createShareContent(r){
-            const div=document.createElement('div');
-            div.style.cssText='width:375px;padding:20px;background:#fff;font-family:sans-serif;';
-            
-            const exportTime=getCurrentTime();
-            const creator=r.creator||CREATOR_NAME;
-            
-            let seasoningsHtml='';
-            if(r.seasonings?.length>0){
-                seasoningsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">🧂 调料</h3>`+r.seasonings.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${s.name}</span><span style="color:#667eea;font-weight:bold">${s.amount}${s.unit}</span></div>`).join('');
-            }
-            
-            let ingsHtml='';
-            if(r.ings?.length>0){
-                ingsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">🥘 食材</h3>`+r.ings.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${i.name}</span><span style="color:#667eea;font-weight:bold">${i.amount}${i.unit}</span></div>`).join('');
-            }
-            
-            let stepsHtml='';
-            if(r.steps?.length>0){
-                stepsHtml=`<h3 style="color:#667eea;margin:15px 0 10px;">📝 步骤</h3>`+r.steps.map((s,i)=>`<div style="margin-bottom:15px;"><div style="background:#667eea;color:#fff;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-weight:bold;display:inline-block;margin-right:8px;">${i+1}</div><div style="margin-top:8px;">${s.image?`<img src="${s.image}" style="max-width:100%;border-radius:8px;margin-bottom:8px;">`:''}<p style="line-height:1.6;margin:0;">${s.text||''}</p></div></div>`).join('');
-            }
-            
-            div.innerHTML=`
-                <div style="text-align:center;border-bottom:3px solid #667eea;padding-bottom:15px;margin-bottom:20px;">
-                    <h1 style="color:#667eea;margin:0;font-size:24px;">🍳 ${r.name}</h1>
-                    <p style="color:#999;margin:5px 0 0;font-size:14px;">${r.category} · ${r.date}</p>
-                </div>
-                ${seasoningsHtml}
-                ${ingsHtml}
-                ${stepsHtml}
-                <div style="margin-top:30px;padding:15px;border-top:2px solid #667eea;background:#f8f8f8;border-radius:8px;">
-                    <div style="color:#667eea;font-size:14px;font-weight:bold;margin-bottom:5px;">👨‍🍳 创建人：${creator}</div>
-                    <div style="color:#999;font-size:12px;">📅 导出时间：${exportTime}</div>
-                </div>
-            `;
-            
-            document.body.appendChild(div);
-            return div;
-        }
-
-        function showLoading(show){
-            document.getElementById('loading').style.display=show?'block':'none';
-        }
-
-        // 数据持久化
-        function saveFolders(){
-            localStorage.setItem('recipeFolders',JSON.stringify(folders));
-        }
-
-        function saveRecipes(){
-            localStorage.setItem('recipes',JSON.stringify(recipes));
-        }
-
-        // URL参数
-        window.onload=function(){
-            const urlParams=new URLSearchParams(window.location.search);
-            const recipeId=urlParams.get('recipe');
-            if(recipeId){
-                const recipe=recipes.find(r=>r.id===recipeId);
-                if(recipe){
-                    currentFolderId=recipe.folderId||'root';
-                    renderMain();
-                    showDetail(recipeId);
-                }
-            }
-        };
-    </script>
-</body>
-</html>
+      
